@@ -1,0 +1,48 @@
+name: Update dynamic values
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # daily at midnight UTC
+  workflow_dispatch: # manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update age and experience
+        run: |
+          BIRTH="1994-04-12"
+          CAREER_START="2017-09-01"
+          TODAY=$(date -u +%Y-%m-%d)
+
+          # Calculate age
+          birth_y=${BIRTH%%-*}
+          birth_md=${BIRTH#*-}
+          today_y=${TODAY%%-*}
+          today_md=${TODAY#*-}
+          age=$((today_y - birth_y))
+          if [[ "$today_md" < "$birth_md" ]]; then
+            age=$((age - 1))
+          fi
+
+          # Calculate years of experience
+          career_y=${CAREER_START%%-*}
+          career_md=${CAREER_START#*-}
+          xp=$((today_y - career_y))
+          if [[ "$today_md" < "$career_md" ]]; then
+            xp=$((xp - 1))
+          fi
+
+          # Replace in README
+          sed -i "s/<!--AGE_START-->.*<!--AGE_END-->/<!--AGE_START-->${age}<!--AGE_END-->/" README.md
+          sed -i "s/<!--XP_START-->.*<!--XP_END-->/<!--XP_START-->${xp}+<!--XP_END-->/" README.md
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --quiet README.md || (git add README.md && git commit -m "chore: update dynamic profile values" && git push)
