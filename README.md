@@ -6,7 +6,7 @@ Based in Toulouse, France · Currently at [Positive Solution](https://www.positi
 
 ---
 
-I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_START-->8<!--XP_END--> years of professional experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.
+I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_START-->8+<!--XP_END--> years of professional experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.
 
 ---
 
