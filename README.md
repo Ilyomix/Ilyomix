@@ -39,7 +39,7 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 
 <a href="https://www.producthunt.com/products/subsnooze?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-subsnooze" target="_blank" rel="noopener noreferrer"><img alt="SubSnooze - Subscription tracker with renewal reminders | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1080586&theme=light&t=1771481948397"></a>
 
-The ADHD-friendly subscription tracker that helps you stop paying for things you forgot to cancel. Built with Next.js 15, React 19, Supabase, and Stripe — featuring adaptive reminders, guided cancellation flows, and a shame-free UX designed for busy brains.
+The subscription tracker that helps you stop paying for things you forgot to cancel. Built with Next.js 15, React 19, Supabase, and Stripe — featuring adaptive reminders, guided cancellation flows, and a shame-free UX designed for busy brains.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
