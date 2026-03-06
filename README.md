@@ -40,7 +40,7 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 
 ---
 
-### Cadran — My Latest Project
+### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" /> Cadran — My Latest Project
 
 A desktop clock for macOS — crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 23 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
 
