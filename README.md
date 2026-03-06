@@ -2,7 +2,7 @@
 
 **Frontend & Design Engineer** crafting polished, high-performance interfaces.
 
-Based in Toulouse, France · Currently at [Positive Solution](https://www.positive-solution.fr) · Founder of [SubSnooze](https://www.subsnooze.com)
+Based in Toulouse, France · Currently at [Positive Solution](https://www.positive-solution.fr) · Founder of [Cadran](https://www.cadranapp.com) & [SubSnooze](https://www.subsnooze.com)
 
 ---
 
@@ -29,13 +29,32 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
+**Native**
+
+![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=for-the-badge&logo=swift&logoColor=white)
+
 **Design**
 
 ![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
 
 ---
 
-### SubSnooze — My Product
+### Cadran — My Latest Project
+
+A desktop clock for macOS — crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 23 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
+
+![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=flat-square&logo=swift&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+
+[**Visit Cadran →**](https://www.cadranapp.com)
+
+---
+
+### SubSnooze
 
 <a href="https://www.producthunt.com/products/subsnooze?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-subsnooze" target="_blank" rel="noopener noreferrer"><img alt="SubSnooze - Subscription tracker with renewal reminders | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1080586&theme=light&t=1771481948397"></a>
 
@@ -109,4 +128,5 @@ A market analysis tool that aggregates technical indicators, social metrics, and
 
 [![Website](https://img.shields.io/badge/ilyesabd.com-000000?style=for-the-badge&logo=safari&logoColor=white)](https://www.ilyesabd.com)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ilyesabdlillah)
+[![Cadran](https://img.shields.io/badge/cadranapp.com-F05138?style=for-the-badge&logo=apple&logoColor=white)](https://www.cadranapp.com)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:ilyes1204@gmail.com)
