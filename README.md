@@ -56,7 +56,7 @@ A desktop clock for macOS — crafted clock faces rendered directly on your wall
 
 ---
 
-### SubSnooze
+### <img src="assets/subsnooze-icon.png" width="28" alt="SubSnooze icon" /> SubSnooze
 
 <a href="https://www.producthunt.com/products/subsnooze?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-subsnooze" target="_blank" rel="noopener noreferrer"><img alt="SubSnooze - Subscription tracker with renewal reminders | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1080586&theme=light&t=1771481948397"></a>
 
