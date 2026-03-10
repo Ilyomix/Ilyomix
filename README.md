@@ -40,7 +40,7 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 
 ---
 
-### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" /> Cadran — My Latest Project
+### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" align="top" /> Cadran — My Latest Project
 
 <a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer"><img alt="Cadran - Turn your Mac wallpaper into a live clock face | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=light&t=1773140646587"></a>
 
@@ -56,7 +56,7 @@ A desktop clock for macOS — crafted clock faces rendered directly on your wall
 
 ---
 
-### <img src="assets/subsnooze-icon.png" width="28" alt="SubSnooze icon" /> SubSnooze
+### <img src="assets/subsnooze-icon.png" width="28" alt="SubSnooze icon" align="top" /> SubSnooze
 
 <a href="https://www.producthunt.com/products/subsnooze?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-subsnooze" target="_blank" rel="noopener noreferrer"><img alt="SubSnooze - Subscription tracker with renewal reminders | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1080586&theme=light&t=1771481948397"></a>
 
