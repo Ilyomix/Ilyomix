@@ -42,6 +42,8 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 
 ### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" /> Cadran — My Latest Project
 
+<a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer"><img alt="Cadran - Turn your Mac wallpaper into a live clock face | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=light&t=1773140646587"></a>
+
 A desktop clock for macOS — crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 23 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
 
 ![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white)
