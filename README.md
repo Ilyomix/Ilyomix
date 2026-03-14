@@ -2,7 +2,7 @@
 
 **Frontend & Design Engineer** crafting polished, high-performance interfaces.
 
-Based in Toulouse, France · Currently at [Positive Solution](https://www.positive-solution.fr) · Founder of [Cadran](https://www.cadranapp.com) & [SubSnooze](https://www.subsnooze.com)
+Based in Toulouse, France · Currently at [Positive Solution](https://www.positive-solution.fr) · Founder of [Cadran](https://www.cadranapp.com)
 
 ---
 
@@ -54,60 +54,6 @@ A desktop clock for macOS — crafted clock faces rendered directly on your wall
 
 [**Visit Cadran →**](https://www.cadranapp.com)
 
----
-
-### <img src="assets/subsnooze-icon.png" width="28" alt="SubSnooze icon" align="top" /> SubSnooze
-
-<a href="https://www.producthunt.com/products/subsnooze?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-subsnooze" target="_blank" rel="noopener noreferrer"><img alt="SubSnooze - Subscription tracker with renewal reminders | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1080586&theme=light&t=1771481948397"></a>
-
-The subscription tracker that helps you stop paying for things you forgot to cancel. Built with Next.js 15, React 19, Supabase, and Stripe — featuring adaptive reminders, guided cancellation flows, and a shame-free UX designed for busy brains.
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Stripe](https://img.shields.io/badge/Stripe-635BFF?style=flat-square&logo=stripe&logoColor=white)
-
-[**Visit SubSnooze →**](https://www.subsnooze.com)
-
----
-
-### Featured Projects
-
-<table>
-<tr>
-<td width="50%">
-
-#### [PeekFi](https://github.com/Ilyomix/PeekFi)
-
-A financial dashboard for monitoring market data at a glance — built with real-time charts, 3D visuals, and a polished Mantine UI.
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
-![Mantine](https://img.shields.io/badge/Mantine-339AF0?style=flat-square&logo=mantine&logoColor=white)
-![Zustand](https://img.shields.io/badge/Zustand-433E38?style=flat-square&logo=react&logoColor=white)
-
-[**Live Demo →**](https://peekfi.netlify.app)
-
-</td>
-<td width="50%">
-
-#### [Crypto Sensor](https://github.com/Ilyomix/crypto-sensor)
-
-A market analysis tool that aggregates technical indicators, social metrics, and sentiment data to provide a comprehensive view of crypto market conditions.
-
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Radix UI](https://img.shields.io/badge/Radix_UI-161618?style=flat-square&logo=radixui&logoColor=white)
-
-[**Live Demo →**](https://cryptosensor.netlify.app)
-
-</td>
-</tr>
-</table>
 
 ---
 
