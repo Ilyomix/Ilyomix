@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ilyes Abd-Lillah — Frontend & Design Engineer</title>
+  <meta name="description" content="Frontend & Design Engineer crafting polished, high-performance interfaces. Based in Toulouse, France.">
+  <meta name="theme-color" content="#0C0C0C">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Ilyes Abd-Lillah — Frontend & Design Engineer">
+  <meta property="og:description" content="Crafting polished, high-performance interfaces. Based in Toulouse, France.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ilyomix.github.io">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: '#0C0C0C',
+            surface: '#161616',
+            light: '#F5F5F5',
+            muted: '#888888',
+            accent: '#E8563A',
+            subtle: '#2A2A2A',
+          },
+          fontFamily: {
+            heading: ['Syne', 'sans-serif'],
+            body: ['Manrope', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body class="bg-dark text-light font-body">
+
+  <!-- ===== Floating Orbs ===== -->
+  <div class="floating-orb orb-1"></div>
+  <div class="floating-orb orb-2"></div>
+  <div class="floating-orb orb-3"></div>
+
+  <!-- ===== Language Toggle ===== -->
+  <div id="lang-toggle" class="lang-toggle" role="group" aria-label="Language">
+    <button class="lang-option active" data-lang="en">EN</button>
+    <button class="lang-option" data-lang="fr">FR</button>
+  </div>
+
+  <!-- ===== Hero ===== -->
+  <section id="hero" class="min-h-screen flex flex-col justify-center items-center px-6 relative">
+    <h1 class="hero-fade font-heading text-5xl sm:text-7xl lg:text-8xl xl:text-9xl font-extrabold tracking-tight text-center leading-[0.95]">
+      Ilyes Abd-Lillah
+    </h1>
+    <p class="hero-fade text-lg sm:text-xl text-muted mt-6" data-i18n="hero.subtitle">
+      Frontend & Design Engineer
+    </p>
+    <div class="hero-fade flex items-center gap-2 text-muted mt-3 text-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span data-i18n="hero.location">Toulouse, France</span>
+    </div>
+    <div class="absolute bottom-10 scroll-indicator">
+      <span data-i18n="hero.scroll">Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ===== About ===== -->
+  <section id="about" class="max-w-3xl mx-auto px-6 py-20 sm:py-32">
+    <p class="section-label reveal" data-i18n="about.label">01 — About</p>
+    <div class="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
+      <img
+        src="https://avatars.githubusercontent.com/u/13536193?v=4"
+        alt="Ilyes Abd-Lillah"
+        class="w-20 h-20 sm:w-24 sm:h-24 rounded-full ring-2 ring-subtle object-cover shrink-0 reveal"
+        width="96" height="96" loading="lazy"
+      >
+      <div>
+        <p class="text-lg sm:text-xl text-muted leading-relaxed reveal" data-i18n="about.text">
+          Frontend engineer with 8+ years of experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.
+        </p>
+        <p class="text-sm text-muted/70 mt-6 reveal" data-i18n="about.current">
+          Currently engineering at Positive Solution · Building Cadran on the side
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Experience ===== -->
+  <section id="experience" class="max-w-3xl mx-auto px-6 py-20 sm:py-32">
+    <p class="section-label reveal" data-i18n="experience.label">02 — Experience</p>
+    <div class="timeline reveal">
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.1.role">Lead Frontend Engineer</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.1.company">FoodPilot</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.1.date">2023 &#x2192; Present</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.2.role">Technical Lead Frontend</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.2.company">Skilleos</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.2.date">2021 &#x2192; 2023</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.3.role">Technical Lead Frontend</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.3.company">Guidap</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.3.date">2020 &#x2192; 2021</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.4.role">Frontend Developer</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.4.company">Continental</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.4.date">2019 &#x2192; 2020</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.5.role">Frontend Consultant</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.5.company">WE+</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.5.date">2019 &#x2192; 2020</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.6.role">Frontend Developer</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.6.company">Maestro Corporation</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.6.date">2016 &#x2192; 2019</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.founder">Founder</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.founder.company">Cadran & SubSnooze</p>
+      </div>
+      <div class="timeline-item">
+        <h3 class="font-heading text-lg font-bold" data-i18n="exp.edu.degree">Expert en Technologies de l&#x2019;Information</h3>
+        <p class="text-accent text-sm font-semibold mt-0.5" data-i18n="exp.edu.school">EPITECH</p>
+        <p class="text-muted text-xs mt-1" data-i18n="exp.edu.date">2012 &#x2192; 2017</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Projects ===== -->
+  <section id="projects" class="max-w-3xl mx-auto px-6 py-20 sm:py-32">
+    <p class="section-label reveal" data-i18n="projects.label">03 — Projects</p>
+
+    <!-- Cadran -->
+    <div class="project-card reveal">
+      <div class="flex items-start gap-4 mb-6">
+        <img src="assets/cadran-icon.png" alt="Cadran" class="w-14 h-14 rounded-2xl" width="56" height="56" loading="lazy">
+        <div>
+          <h3 class="font-heading text-2xl font-bold">Cadran</h3>
+          <p class="text-muted text-sm mt-1" data-i18n="projects.cadran.tagline">A desktop clock for macOS</p>
+        </div>
+      </div>
+      <p class="text-muted leading-relaxed mb-6" data-i18n="projects.cadran.desc">
+        Crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 22 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
+      </p>
+      <div class="flex flex-wrap gap-2 mb-6">
+        <span class="tech-pill text-xs">Swift</span>
+        <span class="tech-pill text-xs">SwiftUI</span>
+        <span class="tech-pill text-xs">macOS</span>
+        <span class="tech-pill text-xs">Next.js</span>
+        <span class="tech-pill text-xs">Tailwind</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="https://www.cadranapp.com" target="_blank" rel="noopener noreferrer" class="accent-link" data-i18n="projects.cadran.cta">
+          Visit Cadran →
+        </a>
+        <a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer">
+          <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=dark" alt="Cadran on Product Hunt" width="180" height="40" loading="lazy">
+        </a>
+      </div>
+    </div>
+
+    <!-- SubSnooze -->
+    <div class="project-card reveal mt-6">
+      <div class="flex items-start gap-4 mb-6">
+        <img src="assets/subsnooze-icon.png" alt="SubSnooze" class="w-14 h-14 rounded-2xl" width="56" height="56" loading="lazy">
+        <div>
+          <h3 class="font-heading text-2xl font-bold">SubSnooze</h3>
+          <p class="text-muted text-sm mt-1" data-i18n="projects.subsnooze.tagline">Subscription tracker for busy brains</p>
+        </div>
+      </div>
+      <p class="text-muted leading-relaxed mb-6" data-i18n="projects.subsnooze.desc">
+        Track recurring payments and get timely renewal reminders before charges hit. Smart reminder schedules, guided cancellation workflows, and multi-channel notifications so nothing slips through.
+      </p>
+      <div class="flex flex-wrap gap-2 mb-6">
+        <span class="tech-pill text-xs">Next.js</span>
+        <span class="tech-pill text-xs">TypeScript</span>
+        <span class="tech-pill text-xs">Tailwind</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="https://subsnooze.com" target="_blank" rel="noopener noreferrer" class="accent-link" data-i18n="projects.subsnooze.cta">
+          Try SubSnooze →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Tech Stack ===== -->
+  <section id="stack" class="max-w-3xl mx-auto px-6 py-20 sm:py-32 stagger">
+    <p class="section-label reveal" data-i18n="stack.label">04 — Stack</p>
+
+    <!-- Frontend -->
+    <div class="mb-10 reveal">
+      <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4" data-i18n="stack.frontend">Frontend</h3>
+      <div class="flex flex-wrap gap-3">
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/react/61DAFB" alt="" width="18" height="18" loading="lazy">React</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/vuedotjs/4FC08D" alt="" width="18" height="18" loading="lazy">Vue.js</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/nextdotjs/F5F5F5" alt="" width="18" height="18" loading="lazy">Next.js</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/typescript/3178C6" alt="" width="18" height="18" loading="lazy">TypeScript</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/tailwindcss/06B6D4" alt="" width="18" height="18" loading="lazy">Tailwind CSS</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/html5/E34F26" alt="" width="18" height="18" loading="lazy">HTML</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/css/1572B6" alt="" width="18" height="18" loading="lazy">CSS</span>
+      </div>
+    </div>
+
+    <!-- Native -->
+    <div class="mb-10 reveal">
+      <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4" data-i18n="stack.native">Native</h3>
+      <div class="flex flex-wrap gap-3">
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/swift/F05138" alt="" width="18" height="18" loading="lazy">Swift</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/swift/0071e3" alt="" width="18" height="18" loading="lazy">SwiftUI</span>
+      </div>
+    </div>
+
+    <!-- Tools & Infra -->
+    <div class="mb-10 reveal">
+      <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4" data-i18n="stack.tools">Tools & Infra</h3>
+      <div class="flex flex-wrap gap-3">
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/nodedotjs/339933" alt="" width="18" height="18" loading="lazy">Node.js</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/vite/646CFF" alt="" width="18" height="18" loading="lazy">Vite</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/git/F05032" alt="" width="18" height="18" loading="lazy">Git</span>
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/docker/2496ED" alt="" width="18" height="18" loading="lazy">Docker</span>
+      </div>
+    </div>
+
+    <!-- Design -->
+    <div class="reveal">
+      <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4" data-i18n="stack.design">Design</h3>
+      <div class="flex flex-wrap gap-3">
+        <span class="tech-pill"><img src="https://cdn.simpleicons.org/figma/F24E1E" alt="" width="18" height="18" loading="lazy">Figma</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Contact ===== -->
+  <section id="contact" class="max-w-3xl mx-auto px-6 py-20 sm:py-32 text-center">
+    <p class="section-label reveal" data-i18n="contact.label">05 — Contact</p>
+    <h2 class="font-heading text-3xl sm:text-4xl font-bold mb-4 reveal" data-i18n="contact.title">Let&#x2019;s connect</h2>
+    <p class="text-muted mb-10 reveal" data-i18n="contact.text">
+      Got a project in mind or just want to say hi? Feel free to reach out.
+    </p>
+    <div class="flex justify-center gap-4 reveal">
+      <a href="https://www.linkedin.com/in/ilyes-abd-lillah" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+      </a>
+      <a href="https://github.com/Ilyomix" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+      </a>
+      <a href="mailto:ilyes1204@gmail.com" class="social-link" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </a>
+      <a href="https://www.cadranapp.com" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Cadran">
+        <img src="assets/cadran-icon.png" alt="" class="w-5 h-5 rounded" width="20" height="20">
+      </a>
+      <a href="https://subsnooze.com" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="SubSnooze">
+        <img src="assets/subsnooze-icon.png" alt="" class="w-5 h-5 rounded" width="20" height="20">
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="text-center py-8 border-t border-subtle">
+    <p class="text-muted text-xs" data-i18n="footer.credit">Designed & built by Ilyes Abd-Lillah</p>
+  </footer>
+
+  <!-- Lucide Icons (for any dynamic icons) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- i18n + Scroll Reveal -->
+  <script src="assets/i18n.js"></script>
+
+</body>
+</html>
