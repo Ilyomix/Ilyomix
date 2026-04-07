@@ -42,7 +42,7 @@ I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_ST
 
 ### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" align="top" /> Cadran — My Latest Project
 
-<a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer"><img alt="Cadran - Turn your Mac wallpaper into a live clock face | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=light&t=1773140646587"></a>
+<a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer"><img alt="Cadran - Turn your Mac wallpaper into a live clock face | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=light&t=1773140646587"></a> <a href="https://github.com/jaywcjlove/awesome-mac/tree/master?tab=readme-ov-file#general-tools" target="_blank" rel="noopener noreferrer"><img alt="Cadran is mentioned in awesome-mac" width="245" height="44" src="https://awesome.re/mentioned-badge.svg"></a>
 
 A desktop clock for macOS — crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 22 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
 
