@@ -77,5 +77,5 @@ A desktop clock for macOS — crafted clock faces rendered directly on your wall
 [![Website](https://img.shields.io/badge/ilyomix.github.io-000000?style=for-the-badge&logo=safari&logoColor=white)](https://ilyomix.github.io)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ilyes-abd-lillah)
 [![Cadran](https://img.shields.io/badge/cadranapp.com-F05138?style=for-the-badge&logo=apple&logoColor=white)](https://www.cadranapp.com)
-[![SubSnooze](https://img.shields.io/badge/subsnooze.com-6366F1?style=for-the-badge&logo=data:image/svg+xml;base64,&logoColor=white)](https://subsnooze.com)
+[![SubSnooze](https://img.shields.io/badge/subsnooze.com-6366F1?style=for-the-badge&logoColor=white)](https://subsnooze.com)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:ilyes1204@gmail.com)
