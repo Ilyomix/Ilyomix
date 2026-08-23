@@ -1,9 +1,16 @@
-name: Update dynamic values
+name: Update profile
 
 on:
   schedule:
-    - cron: "0 0 * * *" # daily at midnight UTC
-  workflow_dispatch: # manual trigger
+    - cron: "0 3 * * *"
+  push:
+    paths:
+      - ".github/workflows/update-readme.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: update-profile
+  cancel-in-progress: true
 
 jobs:
   update:
@@ -41,8 +48,30 @@ jobs:
           sed -i "s/<!--AGE_START-->.*<!--AGE_END-->/<!--AGE_START-->${age}<!--AGE_END-->/" README.md
           sed -i "s/<!--XP_START-->.*<!--XP_END-->/<!--XP_START-->${xp}+<!--XP_END-->/" README.md
 
-      - name: Commit if changed
+      - name: Generate stats card
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: stats
+          options: username=${{ github.repository_owner }}&show_icons=true&hide_rank=true&theme=transparent&hide_border=true
+          path: profile/stats.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: true
+
+      - name: Generate top languages card
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: top-langs
+          options: username=${{ github.repository_owner }}&layout=compact&langs_count=6&size_weight=0.5&count_weight=0.5&exclude_repo=Ilyomix&theme=transparent&hide_border=true
+          path: profile/top-langs.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_error: true
+
+      - name: Commit profile updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git diff --quiet README.md || (git add README.md && git commit -m "chore: update dynamic profile values" && git push)
+          git add README.md profile/*.svg
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update profile data"
+            git push
+          fi

@@ -10,7 +10,7 @@ const translations = {
     'about.text':
       'Frontend engineer with 8+ years of experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.',
     'about.current':
-      'Currently engineering at Positive Solution \u00b7 Building Cadran & SubSnooze on the side',
+      'Currently engineering at Positive Solution \u00b7 Building Cadran on the side',
     'hero.scroll': 'Scroll',
     'experience.label': '02 \u2014 Experience',
     'exp.1.role': 'Lead Frontend Engineer',
@@ -32,7 +32,6 @@ const translations = {
     'exp.6.company': 'Maestro Corporation',
     'exp.6.date': '2016 \u2192 2019',
     'exp.founder': 'Founder',
-    'exp.founder.company': 'Cadran & SubSnooze',
     'exp.edu.degree': 'Expert en Technologies de l\u2019Information',
     'exp.edu.school': 'EPITECH',
     'exp.edu.date': '2012 \u2192 2017',
@@ -41,10 +40,6 @@ const translations = {
     'projects.cadran.desc':
       'Crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 22 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.',
     'projects.cadran.cta': 'Visit Cadran \u2192',
-    'projects.subsnooze.tagline': 'Subscription tracker for busy brains',
-    'projects.subsnooze.desc':
-      'Track recurring payments and get timely renewal reminders before charges hit. Smart reminder schedules, guided cancellation workflows, and multi-channel notifications so nothing slips through.',
-    'projects.subsnooze.cta': 'Try SubSnooze \u2192',
     'stack.label': '04 \u2014 Stack',
     'stack.frontend': 'Frontend',
     'stack.native': 'Native',
@@ -63,7 +58,7 @@ const translations = {
     'about.text':
       "Ing\u00e9nieur frontend avec 8+ ans d\u2019exp\u00e9rience, sp\u00e9cialis\u00e9 dans la cr\u00e9ation d\u2019interfaces aussi agr\u00e9ables \u00e0 utiliser qu\u2019\u00e0 regarder. Je porte une attention particuli\u00e8re aux design systems, aux d\u00e9tails d\u2019interaction et \u00e0 cette finition qui rend un logiciel intentionnel.",
     'about.current':
-      'Actuellement ing\u00e9nieur chez Positive Solution \u00b7 Cadran & SubSnooze en parall\u00e8le',
+      'Actuellement ing\u00e9nieur chez Positive Solution \u00b7 Cadran en parall\u00e8le',
     'hero.scroll': 'Scroll',
     'experience.label': '02 \u2014 Parcours',
     'exp.1.role': 'Lead Frontend Engineer',
@@ -85,7 +80,6 @@ const translations = {
     'exp.6.company': 'Maestro Corporation',
     'exp.6.date': '2016 \u2192 2019',
     'exp.founder': 'Fondateur',
-    'exp.founder.company': 'Cadran & SubSnooze',
     'exp.edu.degree': 'Expert en Technologies de l\u2019Information',
     'exp.edu.school': 'EPITECH',
     'exp.edu.date': '2012 \u2192 2017',
@@ -94,10 +88,6 @@ const translations = {
     'projects.cadran.desc':
       "Des cadrans \u00e9l\u00e9gants rendus directement sur votre fond d\u2019\u00e9cran, sur tous les Spaces et \u00e9crans. Con\u00e7u avec Swift, SwiftUI et Core Animation. 22 cadrans uniques, 40 fonds d\u2019\u00e9cran, support multi-\u00e9cran et rendu optimis\u00e9 en \u00e9nergie.",
     'projects.cadran.cta': 'D\u00e9couvrir Cadran \u2192',
-    'projects.subsnooze.tagline': "Suivi d\u2019abonnements pour cerveaux occup\u00e9s",
-    'projects.subsnooze.desc':
-      "Suivez vos paiements r\u00e9currents et recevez des rappels avant les pr\u00e9l\u00e8vements. Rappels intelligents, workflows de r\u00e9siliation guid\u00e9s et notifications multi-canaux pour ne rien laisser passer.",
-    'projects.subsnooze.cta': 'Essayer SubSnooze \u2192',
     'stack.label': '04 \u2014 Stack',
     'stack.frontend': 'Frontend',
     'stack.native': 'Natif',
