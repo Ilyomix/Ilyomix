@@ -70,8 +70,6 @@ Cadran brings crafted clock faces to every Space and display while staying energ
   </tr>
 </table>
 
-<sub>Cards refresh daily from GitHub Actions.</sub>
-
 ---
 
 ### Connect
