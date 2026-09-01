@@ -6,7 +6,7 @@ Toulouse, France · Engineering at [Positive Solution](https://www.positive-solu
 
 ---
 
-I work where design and engineering meet. Over <!--XP_START-->8+<!--XP_END--> years, I've helped teams ship product interfaces, establish design systems, and turn interaction details into software that feels intentional. I'm <!--AGE_START-->32<!--AGE_END-->, endlessly curious, and equally comfortable refining a component API or a transition curve.
+I work where design and engineering meet. Over <!--XP_START-->9+<!--XP_END--> years, I've helped teams ship product interfaces, establish design systems, and turn interaction details into software that feels intentional. I'm <!--AGE_START-->32<!--AGE_END-->, endlessly curious, and equally comfortable refining a component API or a transition curve.
 
 ### What I care about
 
