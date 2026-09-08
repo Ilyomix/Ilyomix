@@ -36,6 +36,18 @@ Cadran brings crafted clock faces to every Space and display while staying energ
 
 ---
 
+### Featured work — Crypto LED Board
+
+**A live crypto dashboard rendered as a pixel-art LED matrix.**
+
+Follow Binance Spot prices with interactive charts, a live order book, and market depth. Custom bitmap typography, responsive layouts, and CRT effects combine a retro visual identity with real-time WebSocket data.
+
+**Built with:** React · TypeScript · Vite · WebSockets · Canvas 2D / WebGL
+
+[**Open Crypto LED Board →**](https://crypto-led-board.vercel.app/)
+
+---
+
 ### Toolbox
 
 **Product UI**
