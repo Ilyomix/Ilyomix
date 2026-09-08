@@ -36,7 +36,7 @@ Cadran brings crafted clock faces to every Space and display while staying energ
 
 ---
 
-### Featured work — Crypto LED Board
+### <img src="https://raw.githubusercontent.com/Ilyomix/Ilyomix.github.io/main/assets/crypto-led-board-icon.svg" width="28" height="28" alt="Crypto LED Board icon" align="top" /> Featured work — Crypto LED Board
 
 **A live crypto dashboard rendered as a pixel-art LED matrix.**
 
