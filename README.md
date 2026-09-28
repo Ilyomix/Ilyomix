@@ -36,6 +36,18 @@ Cadran brings crafted clock faces to every Space and display while staying energ
 
 ---
 
+### <img src="assets/lift-icon.svg" width="28" height="28" alt="Lift icon" align="top" /> Featured work — Lift
+
+**A research-based hypertrophy program, as a web app you install on your phone.**
+
+Lift builds the whole plan backwards from your goal date (recomposition, cut, then stabilization, in blocks separated by deloads) and guides each session set by set: rest timer with lock-screen notifications, automatic load progression, nutrition targets and progress tracking. Installable PWA, bilingual FR/EN, works offline, no account: everything stays on the device.
+
+**Built with:** React · TypeScript · Vite · Tailwind CSS · PWA (Workbox) · IndexedDB
+
+[**Open Lift →**](https://ilyomix.github.io/lift/) · [Source](https://github.com/Ilyomix/lift)
+
+---
+
 ### <img src="https://raw.githubusercontent.com/Ilyomix/Ilyomix.github.io/main/assets/crypto-led-board-icon.svg?v=dark-orange" width="28" height="28" alt="Crypto LED Board icon" align="top" /> Featured work — Crypto LED Board
 
 **A live crypto dashboard rendered as a pixel-art LED matrix.**
