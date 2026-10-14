@@ -295,18 +295,17 @@ class Panel:
                 f'width="{num(vw)}" height="{num(vh)}" role="img" aria-label="{title}"><title>{title}</title>'
                 f'<defs><pattern id="dot" {dots} fill="#fff"/></pattern><pattern id="off" {dots} fill="{OFF}"/></pattern>'
                 f'<mask id="leds" maskUnits="userSpaceOnUse" x="0" y="0" {card}><rect {card} fill="url(#dot)"/></mask>'
-                f'<clipPath id="power"><rect class="power" {area}/></clipPath>'
+                f'<clipPath id="screen"><rect {area}/></clipPath>'
                 f'<filter id="bloom" x="-3%" y="-3%" width="106%" height="106%"><feGaussianBlur stdDeviation="{num(p * .6)}" result="b"/>'
                 f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>{defs}</defs>'
-                f'<style>.power{{animation:power .9s steps({self.rows}) backwards}}'
-                f'@keyframes power{{from{{transform:translateY(-{self.px(self.rows)}px)}}}}{style}'
+                f'<style>{style}'
                 f'@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}</style>'
                 f'<path d="{shape}" fill="#0B0907"/><rect {area} fill="{BG}"/><rect {area} fill="url(#off)"/>'
                 f'<g filter="url(#bloom)"><g mask="url(#leds)">{self.draw(ring)}</g>'
-                f'<g mask="url(#leds)" clip-path="url(#power)">{body}</g></g></svg>')
+                f'<g mask="url(#leds)" clip-path="url(#screen)">{body}</g></g></svg>')
 
 
-def slices(pn, titles, body, style='', defs='', top=None, bottom=None):
+def slices(pn, titles, body, style='', defs='', top=None, bottom=None, indices=None):
     """One panel as one image per title, side by side, one link each; `top` and `bottom` (LED rows) keep
     a band of it. README.md sets the images edge to edge with no whitespace (and `align="top"` between
     bands), so they read as one; every cut has to fall between two LEDs."""
@@ -314,7 +313,8 @@ def slices(pn, titles, body, style='', defs='', top=None, bottom=None):
     assert all((i * w - pn.x) % pn.p == 0 for i in range(1, len(titles))), 'a cut splits an LED'
     y0 = 0 if top is None else pn.y + top * pn.p
     y1 = pn.height if bottom is None else pn.y + bottom * pn.p
-    return [pn.svg(t, body, style, defs, view=(i * w, y0, w, y1 - y0)) for i, t in enumerate(titles)]
+    indices = range(len(titles)) if indices is None else indices
+    return [pn.svg(titles[i], body, style, defs, view=(i * w, y0, w, y1 - y0)) for i in indices]
 
 
 SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED panel, 6 LEDs clear of the cuts
@@ -1225,7 +1225,7 @@ def visit_verb(last):
     return {'feed': f'FED {name}', 'pet': f'PETTED {name}', 'play': f'PLAYED WITH {name}', 'choose': f'PICKED {name}'}[last['action']]
 
 
-def pet_panel(state=None, now=None):
+def pet_panel(state=None, now=None, part=None):
     """Laid out like a project card (pet, copy, stats box), then Feed, Pet and Play as buttons, one per
     third, and a switch with every pet's head, one per fifth: api/pet.py serves the eight slices, and
     README.md links each to api/act.py. 900 px is the width that splits into both thirds and fifths on
@@ -1315,7 +1315,13 @@ def pet_panel(state=None, now=None):
         n = other['name'].capitalize()
         picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n} on stage." + (' On stage now.' if on else ''))
     art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    return (slices(pn, alts, art_, css + prop_css, bottom=81) + slices(pn, picks, art_, css + prop_css, top=81))
+    if part is None:
+        return slices(pn, alts, art_, css + prop_css, bottom=81) + slices(pn, picks, art_, css + prop_css, top=81)
+    if 0 <= part < len(alts):
+        return slices(pn, alts, art_, css + prop_css, bottom=81, indices=(part,))[0]
+    if len(alts) <= part < len(alts) + len(picks):
+        return slices(pn, picks, art_, css + prop_css, top=81, indices=(part - len(alts),))[0]
+    raise ValueError('pet slice index must be between 0 and 7')
 
 
 def drums(pn, n, col, row, count=7, w=11, h=15, gap=2):
