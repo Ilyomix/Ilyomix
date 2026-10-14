@@ -1,0 +1,4 @@
+# Vercel only serves the visitor counter: api/visits.py and the LED code it imports.
+/*
+!/api
+!/profile

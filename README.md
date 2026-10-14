@@ -1,81 +1,14 @@
-# Hey, I'm Ilyes 👋
+<a href="https://ilyomix.github.io"><img src="https://ilyomix-profile.vercel.app/api/hero" width="100%" alt="Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. Product interfaces, design systems and native apps for the Mac and iPhone. Stack: React, TypeScript, Vue, Next.js, Swift, SwiftUI."></a>
 
-**Frontend & Design Engineer** crafting polished, high-performance interfaces.
+<!-- The projects as one card, in four bands that touch thanks to align="top": the heading and LED Board come
+from the build, Cadran (live downloads, real-time Titan clock) and Lift (real-time lock screen) from api/. -->
+<p align="center"><img src="profile/projects-1.svg" width="100%" align="top" alt="My projects: three apps shipped, on macOS, iOS and the web."><br><a href="https://www.cadranapp.com"><img src="https://ilyomix-profile.vercel.app/api/cadran" width="100%" align="top" alt="Cadran, macOS: clock faces rendered on your wallpaper, on every Space and display. Featured on Product Hunt and in awesome-mac. SwiftUI, Core Animation, Next.js. Visit cadranapp.com."></a><br><a href="https://apps.apple.com/app/id6818697874"><img src="https://ilyomix-profile.vercel.app/api/lift" width="100%" align="top" alt="Lift, iOS and iPadOS: a hypertrophy program built backwards from your goal date, with the rest timer on the lock screen and in the Dynamic Island. React, Capacitor, ActivityKit. Free on the App Store."></a><br><a href="https://crypto-led-board.vercel.app/"><img src="profile/projects-4.svg" width="100%" align="top" alt="Crypto LED Board, web: live Binance Spot prices, charts and order book on a pixel-art LED matrix. React, WebSockets, Canvas and WebGL. Open the live board."></a></p>
 
-Based in Toulouse, France · Currently at [Positive Solution](https://www.positive-solution.fr) · Founder of [Cadran](https://www.cadranapp.com) & [SubSnooze](https://subsnooze.com)
+<img src="profile/github.svg" width="100%" alt="GitHub activity for @Ilyomix: contributions over the last year, commits, pull requests, repos, stars, followers and top languages.">
 
----
+<p align="center"><a href="https://ilyomix.github.io"><img src="profile/links-1.svg" width="33.33%" alt="Portfolio"></a><a href="https://www.linkedin.com/in/ilyes-abd-lillah"><img src="profile/links-2.svg" width="33.33%" alt="LinkedIn"></a><a href="mailto:ilyes1204@gmail.com"><img src="profile/links-3.svg" width="33.33%" alt="Email"></a></p>
 
-I'm a <!--AGE_START-->31<!--AGE_END-->-year-old frontend engineer with <!--XP_START-->8+<!--XP_END--> years of professional experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.
-
----
-
-### Tech Stack
-
-**Frontend**
-
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-
-**Tools & Infra**
-
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
-**Native**
-
-![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=for-the-badge&logo=swift&logoColor=white)
-
-**Design**
-
-![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
-
----
-
-### <img src="assets/cadran-icon.png" width="28" alt="Cadran icon" align="top" /> Cadran — My Latest Project
-
-<a href="https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran" target="_blank" rel="noopener noreferrer"><img alt="Cadran - Turn your Mac wallpaper into a live clock face | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1093230&theme=light&t=1773140646587"></a>
-
-A desktop clock for macOS — crafted clock faces rendered directly on your wallpaper, across all Spaces and displays. Built with Swift, SwiftUI, and Core Animation. 22 unique faces, 40 backgrounds, multi-monitor support, and energy-optimized rendering.
-
-![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=flat-square&logo=swift&logoColor=white)
-![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-
-[**Visit Cadran →**](https://www.cadranapp.com)
-
-
----
-
-### GitHub Stats
-
-<table>
-<tr>
-<td>
-<img src="https://github-readme-stats-sigma-five.vercel.app/api?username=Ilyomix&show_icons=true&theme=tokyonight&hide_border=true&bg_color=00000000" alt="GitHub Stats" />
-</td>
-<td>
-<img src="https://github-readme-stats-sigma-five.vercel.app/api/top-langs/?username=Ilyomix&layout=compact&theme=tokyonight&hide_border=true&bg_color=00000000" alt="Top Languages" />
-</td>
-</tr>
-</table>
-
----
-
-### Connect
-
-[![Website](https://img.shields.io/badge/ilyomix.github.io-000000?style=for-the-badge&logo=safari&logoColor=white)](https://ilyomix.github.io)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ilyes-abd-lillah)
-[![Cadran](https://img.shields.io/badge/cadranapp.com-F05138?style=for-the-badge&logo=apple&logoColor=white)](https://www.cadranapp.com)
-[![SubSnooze](https://img.shields.io/badge/subsnooze.com-6366F1?style=for-the-badge&logo=data:image/svg+xml;base64,&logoColor=white)](https://subsnooze.com)
-[![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:ilyes1204@gmail.com)
+<!-- The pet card, live from api/pet.py: Feed, Pet, Play over the five-pet switch, cut from one drawing. Each slice links to
+api/act.py, which records the click and comes straight back here. align="top" keeps the two bands touching. -->
+<a name="pet"></a>
+<p align="center"><a href="https://ilyomix-profile.vercel.app/api/act?do=feed"><img src="https://ilyomix-profile.vercel.app/api/pet?part=1" width="33.33%" align="top" alt="Feed the profile pet"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=pet"><img src="https://ilyomix-profile.vercel.app/api/pet?part=2" width="33.33%" align="top" alt="Pet it"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=play"><img src="https://ilyomix-profile.vercel.app/api/pet?part=3" width="33.33%" align="top" alt="Play with it"></a><br><a href="https://ilyomix-profile.vercel.app/api/act?do=choose&pet=cat"><img src="https://ilyomix-profile.vercel.app/api/pet?part=4" width="20%" align="top" alt="Switch to Byte the cat"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=choose&pet=dog"><img src="https://ilyomix-profile.vercel.app/api/pet?part=5" width="20%" align="top" alt="Switch to Pixel the dog"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=choose&pet=bunny"><img src="https://ilyomix-profile.vercel.app/api/pet?part=6" width="20%" align="top" alt="Switch to Nibble the bunny"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=choose&pet=fox"><img src="https://ilyomix-profile.vercel.app/api/pet?part=7" width="20%" align="top" alt="Switch to Hex the fox"></a><a href="https://ilyomix-profile.vercel.app/api/act?do=choose&pet=penguin"><img src="https://ilyomix-profile.vercel.app/api/pet?part=8" width="20%" align="top" alt="Switch to Sudo the penguin"></a></p>
