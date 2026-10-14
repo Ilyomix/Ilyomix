@@ -11,16 +11,16 @@ from _redis import SVG, redis, send  # noqa: E402
 import build  # noqa: E402
 
 
-@functools.lru_cache(maxsize=4)
-def card(fields, minute):
-    """A page view asks for all eight slices: one render per state and minute serves them."""
-    return build.pet_panel(build.pet_state(dict(fields)), minute)
+@functools.lru_cache(maxsize=32)
+def card(fields, minute, part):
+    """Render only the requested slice so eight parallel image requests stay small and fast."""
+    return build.pet_panel(build.pet_state(dict(fields)), minute, part)
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         part = parse_qs(urlparse(self.path).query).get('part', ['1'])[0]
+        i = int(part) - 1 if part.isdigit() and 1 <= int(part) <= 8 else 0
         flat = (redis(['HGETALL', 'profile-pet']) or [None])[0] or []
-        svgs = card(tuple(zip(flat[::2], flat[1::2])), dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0))
-        i = int(part) - 1 if part.isdigit() and 1 <= int(part) <= len(svgs) else 0
-        send(self, svgs[i].encode(), headers=[SVG])
+        svg = card(tuple(zip(flat[::2], flat[1::2])), dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0), i)
+        send(self, svg.encode(), headers=[SVG])
