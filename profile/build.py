@@ -16,6 +16,7 @@ prefers-reduced-motion.
 """
 import copy
 import datetime as dt
+import functools
 import json
 import math
 import re
@@ -225,6 +226,26 @@ def polar(center, r, deg):
     return round(center[0] + r * math.sin(a)), round(center[1] - r * math.cos(a))
 
 
+@functools.lru_cache(maxsize=16)
+def card_edge(p, x, width, height, corner):
+    """Panel.edge for one card size. It depends on the geometry alone and was most of a live render's
+    time (api/ draws on every view), so each warm instance works it out once."""
+    m = round(x / p)
+    gw, gh = round(width / p), round(height / p)
+
+    def cut(gy):
+        k = min(gy, gh - 1 - gy)
+        return corner[k] if k < len(corner) else 0
+
+    def inside(gx, gy):
+        return 0 <= gy < gh and cut(gy) <= gx < gw - cut(gy)
+    shape = ''.join(f'M{num(cut(gy) * p)} {num(gy * p)}h{num((gw - 2 * cut(gy)) * p)}v{num(p)}h{num(-(gw - 2 * cut(gy)) * p)}Z'
+                    for gy in range(gh))
+    ring = {(gx - m, gy - m): RULE for gy in range(gh) for gx in range(gw) if inside(gx, gy)
+            and not all(inside(gx + i, gy + j) for i, j in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+    return shape, ring
+
+
 class Panel:
     CORNER = [4, 2, 1, 1]  # LEDs cut from the first rows at each corner of a card: a pixel-art rounding
 
@@ -267,20 +288,7 @@ class Panel:
     def edge(self):
         """The card's outline on the LED grid, which also covers the margin: its stepped shape as a path,
         and the ring of LEDs along it in panel coordinates."""
-        p, m = self.p, round(self.x / self.p)
-        gw, gh = round(self.width / p), round(self.height / p)
-
-        def cut(gy):
-            k = min(gy, gh - 1 - gy)
-            return self.CORNER[k] if k < len(self.CORNER) else 0
-
-        def inside(gx, gy):
-            return 0 <= gy < gh and cut(gy) <= gx < gw - cut(gy)
-        shape = ''.join(f'M{num(cut(gy) * p)} {num(gy * p)}h{num((gw - 2 * cut(gy)) * p)}v{num(p)}h{num(-(gw - 2 * cut(gy)) * p)}Z'
-                        for gy in range(gh))
-        ring = {(gx - m, gy - m): RULE for gy in range(gh) for gx in range(gw) if inside(gx, gy)
-                and not all(inside(gx + i, gy + j) for i, j in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
-        return shape, ring
+        return card_edge(self.p, self.x, self.width, self.height, tuple(self.CORNER))
 
     def svg(self, title, body, style='', defs='', view=None):
         """`view=(x, y, width, height)` crops the panel, see `slices`."""
