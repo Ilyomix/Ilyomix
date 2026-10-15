@@ -992,6 +992,110 @@ def emoji(key, col, row):
     return sprite(rows, palette, col, row)
 
 
+# Country flags at 6x5 LEDs, the size of the hero's French flag, by ISO 3166 code (Vercel's x-vercel-ip-country).
+# Rows are split by spaces; each row is stretched across the six columns and the rows down the five, so 'BWR'
+# is three upright bands, 'K R Y' three across and a 6x5 grid is drawn as it is. '.' is empty. A country left out
+# keeps its code in text.
+FLAG_COLORS = {'R': '#EF4135', 'W': CREAM, 'B': '#3D7BFF', 'b': '#6EC1FF', 'T': '#00B4C8', 'G': '#1FAF4F',
+               'Y': '#FFD23A', 'O': '#FF8A1F', 'K': '#2A2A2A', 'M': '#A3243B', 'D': '#8B5A2B'}
+FLAGS = {
+    # Europe
+    'AD': 'BYR', 'AL': 'RRRRRR RRKKRR RKKKKR RRKKRR RRRRRR', 'AM': 'R B O', 'AT': 'R W R', 'AZ': 'b R G',
+    'BA': 'BYYYBB BBYYBB BBBYYB BBBBYB BBBBBB', 'BE': 'KYR', 'BG': 'W G R', 'BY': 'WRRRRR WRRRRR WRRRRR WGGGGG WGGGGG',
+    'CH': 'RRRRRR RRWWRR RWWWWR RRWWRR RRRRRR', 'CY': 'WWWWWW WWOOOW WOOOWW WWWWWW WWGGWW',
+    'CZ': 'BWWWWW BBWWWW BBBRRR BBRRRR BRRRRR', 'DE': 'K R Y', 'DK': 'RRWRRR RRWRRR WWWWWW RRWRRR RRWRRR',
+    'EE': 'B K W', 'ES': 'R Y Y Y R', 'FI': 'WWBWWW WWBWWW BBBBBB WWBWWW WWBWWW', 'FO': 'WBRBWW BBRBBB RRRRRR BBRBBB WBRBWW',
+    'FR': 'BWR', 'GB': 'BWRRWB WBRRBW RRRRRR WBRRBW BWRRWB', 'GE': 'WWRRWW WWRRWW RRRRRR WWRRWW WWRRWW',
+    'GL': 'WWWWWW WRRWWW RWWRRR RRRRRR RRRRRR', 'GR': 'BWBBBB WWWWWW BWBBBB WWWWWW BBBBBB',
+    'HR': 'RRRRRR RRWRRR WWRWWW BBWBBB BBBBBB', 'HU': 'R W G', 'IE': 'GWO', 'IS': 'BWRWBB WWRWWW RRRRRR WWRWWW BWRWBB',
+    'IT': 'GWR', 'LI': 'BYBBBB BBBBBB BBBBBB RRRRRR RRRRRR', 'LT': 'Y G R', 'LU': 'R W b', 'LV': 'M M W M M', 'MC': 'R W',
+    'MD': 'BBYYRR BBDDRR BBYYRR', 'ME': 'YYYYYY YRRRRY YRYYRY YRRRRY YYYYYY', 'MK': 'YRRRRY RYRRYR YYYYYY RYRRYR YRRRRY',
+    'MT': 'WR', 'NL': 'R W B', 'NO': 'RWBWRR WWBWWW BBBBBB WWBWWW RWBWRR', 'PL': 'W R',
+    'PT': 'GGRRRR GGYRRR GYYYRR GGYRRR GGRRRR', 'RO': 'BYR', 'RS': 'R B W', 'RU': 'W B R',
+    'SE': 'BBYBBB BBYBBB YYYYYY BBYBBB BBYBBB', 'SI': 'WBWWWW BBBBBB RRRRRR', 'SK': 'WRWWWW BRBBBB RRRRRR', 'SM': 'W b',
+    'TR': 'RRRRRR RWWRRR RWRWRR RWWRRR RRRRRR', 'UA': 'B Y', 'VA': 'YW', 'XK': 'BBBBBB BBYYBB BBYYYB BBBYBB BBBBBB',
+    # the Americas
+    'AR': 'bbbbbb bbbbbb WWYYWW bbbbbb bbbbbb', 'BB': 'BBYYBB BKYYKB BBKKBB BBYYBB BBYYBB', 'BO': 'R Y G',
+    'BR': 'GGYYGG GYBBYG YBBBBY GYBBYG GGYYGG', 'BS': 'KTTTTT KKYYYY KKKYYY KKYYYY KTTTTT',
+    'BZ': 'RRRRRR BBWWBB BWWWWB BBWWBB RRRRRR', 'CA': 'RWWWWR RWRRWR RWRRWR RWWRWR RWWWWR',
+    'CL': 'BWBWWW BBBWWW RRRRRR RRRRRR RRRRRR', 'CO': 'Y Y Y B R', 'CR': 'B W R W B',
+    'CU': 'RBBBBB RRWWWW RWRBBB RRWWWW RBBBBB', 'DO': 'BBWRRR BBWRRR WWWWWW RRWBBB RRWBBB',
+    'EC': 'YYYYYY YYYYYY YYDDYY BBBBBB RRRRRR', 'GT': 'bbWWbb bbWWbb bbGGbb bbWWbb bbWWbb',
+    'GY': 'RYYGGG RRYYGG KRRYYG RRYYGG RYYGGG', 'HN': 'BBBBBB BBBBBB WWBBWW BBBBBB BBBBBB',
+    'HT': 'BBBBBB BBWWBB RRWWRR RRRRRR RRRRRR', 'JM': 'YGGGGY KYGGYK KKYYKK KYGGYK YGGGGY',
+    'MX': 'GGWWRR GGWWRR GGDDRR GGWWRR GGWWRR', 'NI': 'BBBBBB BBBBBB WWbbWW BBBBBB BBBBBB',
+    'PA': 'WBWRRR WWWRRR BBBWWW BBBWRW BBBWWW', 'PE': 'RWR', 'PR': 'bRRRRR bbWWWW bWbRRR bbWWWW bRRRRR',
+    'PY': 'RRRRRR RRRRRR WWYYWW BBBBBB BBBBBB', 'SR': 'GGGGGG WWWWWW RRYYRR WWWWWW GGGGGG',
+    'SV': 'BBBBBB BBBBBB WWYYWW BBBBBB BBBBBB', 'TT': 'RRRWKW RRWKWR RWKWRR WKWRRR KWRRRR',
+    'US': 'BBBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'UY': 'YYWWWW YYBBBB WWWWWW BBBBBB WWWWWW', 'VE': 'Y B R',
+    'AG': 'KKYYKK RBBBBR RRWWRR RRWWRR RRRRRR', 'DM': 'GGYKGG GGYKGG YYRRYY GGYKGG GGYKGG',
+    'GD': 'RRRRRR RYYYYR RGRRGR RYYYYR RRRRRR', 'KN': 'GGGGYK GGGYKY GGYKYR GYKYRR YKYRRR',
+    'LC': 'bbbbbb bbWWbb bWKKWb bWYYWb WYYYYW', 'VC': 'BYYYYG BYGGYG BYYYYG',
+    # Asia
+    'AE': 'RGGGGG RGGGGG RWWWWW RKKKKK RKKKKK', 'AF': 'KKRRGG KKRRGG KKWWGG KKRRGG KKRRGG',
+    'BD': 'GGGGGG GGRRGG GRRRRG GGRRGG GGGGGG', 'BH': 'WWRRRR WRRRRR WWRRRR WRRRRR WWRRRR',
+    'BN': 'WKYYYY YWKYYY YYRKYY YYYWKY YYYYWK', 'BT': 'YYYYYO YYYWOO YYWWOO YWOOOO WOOOOO',
+    'CN': 'RYRYRR YYYRRR RYRYRR RRRRRR RRRRRR', 'HK': 'RRRRRR RRWWRR RWWWWR RRWWRR RRRRRR',
+    'ID': 'R W', 'IL': 'WWWWWW BBBBBB WWBBWW BBBBBB WWWWWW', 'IN': 'OOOOOO OOOOOO WWBBWW GGGGGG GGGGGG',
+    'IQ': 'RRRRRR RRRRRR WGGGGW KKKKKK KKKKKK', 'IR': 'GGGGGG GGGGGG WWRRWW RRRRRR RRRRRR',
+    'JO': 'RKKKKK RRWWWW RWRWWW RRGGGG RGGGGG', 'JP': 'WWWWWW WWRRWW WRRRRW WWRRWW WWWWWW',
+    'KG': 'RRRRRR RYYYYR RYRRYR RYYYYR RRRRRR', 'KH': 'BBBBBB RRWWRR RWWWWR RRRRRR BBBBBB',
+    'KP': 'BBBBBB WWWWWW RWRRRR WWWWWW BBBBBB', 'KR': 'KWWWWK WWRRWW WRRBBW WWBBWW KWWWWK',
+    'KW': 'KKGGGG KKGGGG KWWWWW KKRRRR KKRRRR', 'KZ': 'TTTTTT TTYYTT TYYYYT TTYYTT TTTTTT',
+    'LA': 'RRRRRR BBWWBB BWWWWB BBWWBB RRRRRR', 'LB': 'RRRRRR WWGGWW WGGGGW WWGGWW RRRRRR',
+    'LK': 'YGOMMM YGOMYM YGOMMM YGOMYM YGOMMM', 'MM': 'YYYYYY YYWWYY GWWWWG RRWWRR RRRRRR',
+    'MN': 'RRBBRR RYBBRR RYBBRR RYBBRR RRBBRR', 'MO': 'GGYGGG GGWWGG GWWWWG GGWWGG GGGGGG', 'MV': 'RRRRRR RGGGGR RGWGGR RGGGGR RRRRRR',
+    'MY': 'BYBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'NP': 'BRB... BWRB.. BRRB.. BRWRB. BBBBBB',
+    'OM': 'RWWWWW RWWWWW RRRRRR RGGGGG RGGGGG', 'PH': 'WBBBBB WWBBBB WYWBBB WWRRRR WRRRRR',
+    'PK': 'WGGGGG WGWWGG WGWGGG WGWWGG WGGGGG', 'PS': 'RKKKKK RRWWWW RRRWWW RRGGGG RGGGGG',
+    'QA': 'WWMMMM WMMMMM WWMMMM WMMMMM WWMMMM', 'SA': 'GGGGGG GWWWWG GGGGGG GWWWGG GGGGGG',
+    'SG': 'RWRRRR RRRRRR WWWWWW WWWWWW', 'SY': 'GGGGGG GGGGGG WRWRWR KKKKKK KKKKKK',
+    'TH': 'R W B W R', 'TJ': 'RRRRRR RRRRRR WWYYWW GGGGGG GGGGGG', 'TL': 'KYRRRR KKYRRR KWKYRR KKYRRR KYRRRR',
+    'TM': 'GMGGGG GMGWGG GMGGGG GMGWGG GMGGGG', 'TW': 'BWBRRR BBBRRR RRRRRR RRRRRR RRRRRR',
+    'UZ': 'T W G', 'VN': 'RRRRRR RRYYRR RYYYYR RRYYRR RRRRRR', 'YE': 'R W K',
+    # Africa
+    'AO': 'RRRRRR RRYRRR RRYYRR KKKYKK KKKKKK', 'BF': 'RRRRRR RRYYRR GGYYGG GGGGGG GGGGGG',
+    'BI': 'WRRRRW GWRRWG GGWWGG GWRRWG WRRRRW', 'BJ': 'GGYYYY GGYYYY GGRRRR GGRRRR GGRRRR', 'BW': 'b W K W b',
+    'CD': 'TYTTYR TTTYRY TTYRYT TYRYTT YRYTTT', 'CF': 'BYRRBB WWRRWW GGRRGG YYRRYY YYRRYY',
+    'CG': 'GGGGYR GGGYRR GGYRRR GYRRRR YRRRRR', 'CI': 'OWG', 'CM': 'GGRRYY GGRRYY GGYRYY GGRRYY GGRRYY',
+    'CV': 'BBBBBB BBBBBB WWWWWW RRRRRR BBBBBB', 'DJ': 'Wbbbbb WWbbbb WRWGGG WWGGGG WGGGGG',
+    'DZ': 'GGGWWW GGRRWW GRGWWW GGRRWW GGGWWW', 'EG': 'RRRRRR RRRRRR WWYYWW KKKKKK KKKKKK',
+    'ER': 'RGGGGG RRGGGG RYRRRR RRBBBB RBBBBB', 'ET': 'GGGGGG GGGGGG YYBBYY RRRRRR RRRRRR', 'GA': 'G Y B',
+    'GH': 'RRRRRR RRRRRR YYKKYY GGGGGG GGGGGG', 'GM': 'R W B W G', 'GN': 'RYG',
+    'GQ': 'BGGGGG BBWWWW BBWWWW BBRRRR BRRRRR', 'GW': 'RRYYYY RKYYYY RRGGGG RRGGGG RRGGGG',
+    'KE': 'KKKKKK KKRRKK RRWWRR GGRRGG GGGGGG', 'KM': 'GYYYYY GGWWWW GWGRRR GGBBBB GBBBBB',
+    'LR': 'BWBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'LS': 'BBBBBB WWWWWW WWKKWW GGGGGG GGGGGG',
+    'LY': 'RRRRRR KKKKKK KKWWKK KKKKKK GGGGGG', 'MA': 'RRRRRR RRGGRR RGRRGR RRGGRR RRRRRR',
+    'MG': 'WWRRRR WWRRRR WWGGGG WWGGGG WWGGGG', 'ML': 'GYR', 'MR': 'RRRRRR GGYYGG GYGGYG GGYYGG RRRRRR',
+    'MU': 'R B Y G', 'MW': 'KKRRKK KKKKKK RRRRRR GGGGGG GGGGGG', 'MZ': 'RGGGGG RRWWWW RKKKKK RRWWWW RYYYYY',
+    'NA': 'BBBBWR BYBWRW BBWRWG BWRWGG WRWGGG', 'NE': 'OOOOOO OOOOOO WWOOWW GGGGGG GGGGGG', 'NG': 'GWG',
+    'RW': 'BBBBYB BBBBBB BBBBBB YYYYYY GGGGGG', 'SC': 'BBYYRR BYYRRR YYRRRW YRRRWG RRRWGG',
+    'SD': 'GRRRRR GGWWWW GGGWWW GGKKKK GKKKKK', 'SL': 'G W B', 'SN': 'GGYYRR GGYYRR GGYGRR GGYYRR GGYYRR',
+    'SO': 'bbbbbb bbWWbb bWWWWb bbWWbb bbbbbb', 'SS': 'BKKKKK BBWWWW BYBRRR BBWWWW BGGGGG',
+    'SZ': 'BBBBBB YYYYYY RWWKKR YYYYYY BBBBBB', 'TD': 'BYR', 'TG': 'RWRGGG RRRYYY GGGGGG YYYYYY GGGGGG',
+    'TN': 'RRRRRR RRWWRR RWRRWR RRWWRR RRRRRR', 'TZ': 'GGGYKK GGYKKY GYKKYB YKKYBB KKYBBB',
+    'UG': 'KKKKKK YYWWYY RWWWWR KKWWKK YYYYYY', 'ZA': 'GWRRRR KGWWWW KKGGGG KGWWWW GWBBBB',
+    'ZM': 'GGGGGO GGGGGO GGGRKO GGGRKO GGGRKO', 'ZW': 'WGGGGG WWYYYY WRKKKK WWYYYY WGGGGG',
+    'ST': 'RGGGGG RRYYYY RRKYKY RRYYYY RGGGGG',
+    # Oceania
+    'AU': 'RWRBBB RRRBWB BBBBBB BWBBWB BBBBBB', 'FJ': 'RWRbbb RRRbbb bbbbWb bbbbRb bbbbbb',
+    'NZ': 'RWRBBB RRRBRB BBBBBB BBBRBB BBBBRB', 'PG': 'KRRRRR KKRRYR KWKRRR KKKKRR WKKKKR',
+    'TO': 'WRWRRR RRRRRR WRWRRR RRRRRR RRRRRR', 'WS': 'BWBRRR WBWRRR RRRRRR RRRRRR RRRRRR',
+    'FM': 'bbbbbb bbbWbb bbWbWb bbbWbb bbbbbb', 'KI': 'RRYYRR RYYYYR WWWWWW BBBBBB WWWWWW',
+    'MH': 'BWBBBO BBBBOW BBBOWB BBOWBB BOWBBB', 'NR': 'BBBBBB BBBBBB YYYYYY BWBBBB BBBBBB',
+    'PW': 'bbbbbb bYYbbb YYYYbb bYYbbb bbbbbb', 'SB': 'BWBBYG BBBYGG BWYGGG BYGGGG YGGGGG',
+    'TV': 'RWRbbb RRRbYb bbbbbb bYbbYb bbbYbb', 'VU': 'KYRRRR KKYRRR KKKYYY KKYGGG KYGGGG',
+}
+FLAGS |= dict.fromkeys(('GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'WF', 'PF', 'NC'), FLAGS['FR'])  # French overseas
+
+
+def flag(code):
+    """A country's flag at 6x5 LEDs ({(col, row): colour}), or None when FLAGS hasn't got it."""
+    rows = FLAGS.get(code, '').split()
+    return {(c, r): FLAG_COLORS[k] for r in range(5) for c in range(6)
+            for row in [rows[int((r + .5) * len(rows) / 5)]] for k in [row[int((c + .5) * len(row) / 6)]] if k != '.'} if rows else None
+
+
 # --- panels -----------------------------------------------------------------------------
 
 def years():
@@ -1823,20 +1927,28 @@ def pet_panel(state=None, now=None):
     scene, css = pet_scene(kind, last['action'] if awake else 'sleep')  # the same for every view of this state: cached
     verb, when = visit_verb(last), last and ago(last['at'], now)
     said = ['NO VISITORS YET. BE THE FIRST!']
+    flag_ = None
     if last:  # one sentence over two lines: on its own, a city read as the counts' place, not the visitor's
         head, room = 'LAST VISITOR FROM ', 219 - left  # the copy ends before column 220
-        place = last['where']
-        if text_width(head + place, '3x5') > room and ', ' in place:  # a long city drops the country first
-            place = place.split(', ')[0]
-        while text_width(head + place, '3x5') > room:
+        where = last['where']  # 'PARIS, FR', 'FR' or 'PARIS' from api/act.py, or 'SOMEWHERE'
+        city, code = where.split(', ') if ', ' in where else ('', where) if len(where) == 2 else (where, '')
+        flag_ = flag(code)
+        place = city if flag_ else where  # the flag says the country; without one, its code does
+        tail = text_width(' ', '3x5') + 2 + 6 if flag_ else 0  # a word's space, then the flag
+        if text_width(head + place, '3x5') + tail > room and ', ' in place:  # a long city drops the country first
+            place = city
+        while text_width(head + place, '3x5') + tail > room:
             place = place[:-1].rstrip(' ,')
         did = f'HAS {verb} · {when}'
-        said = [head + place, did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
+        said = [(head + place).rstrip(), did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
     info = card_text(name, f"PROFILE {pet['noun']}", '', ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
                                                          f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], screen=229,
                      copy=37)  # a row lower, under the sentence
     for i, ln in enumerate(said):  # in the accent like card_text's line, a row higher so two fit
         info |= text(ln, left, 22 + 7 * i, pet['accent'], '3x5')
+    if flag_:
+        x = left + text_width(said[0], '3x5') + text_width(' ', '3x5') + 2
+        info |= {(x + c, 22 + r): v for (c, r), v in flag_.items()}
     mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
     info |= text('MOOD', 232, 7, MUTED, '3x5') | text(mood, 283, 7, mood_color, '3x5', anchor='end') | hline(229, 285, 14, RULE)
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):  # the totals, spread over the rest of the screen
