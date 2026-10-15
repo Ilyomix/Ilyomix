@@ -55,6 +55,7 @@ FONT_5X7 = {k: v.split() for k, v in {
     "'": '00100 00100 01000 00000 00000 00000 00000', '_': '00000 00000 00000 00000 00000 00000 11111',
     '#': '01010 01010 11111 01010 11111 01010 01010',
     # Added for this profile, same grid.
+    '!': '00100 00100 00100 00100 00100 00000 00100',
     '·': '00000 00000 00000 00100 00000 00000 00000', '@': '01110 10001 10111 10101 10111 10000 01111',
     '▲': '00000 00000 00100 01110 11111 00000 00000', '▼': '00000 00000 11111 01110 00100 00000 00000',
     '◆': '00000 00100 01110 11111 01110 00100 00000', '↗': '00000 00111 00011 00101 01000 10000 00000',
@@ -1333,12 +1334,13 @@ def pet_panel(state=None, now=None):
     return margin_and_rest(pn, summary, art_, css + prop_css, bottom=PET_CUT)
 
 
-def pet_button(i):
+def pet_button(i, pressed=False):
     """Feed, Pet or Play (ACTIONS[i]) in its third of the pet card, 6 LEDs clear of the cuts: dim fill,
-    brighter edge."""
+    brighter edge. Pressed, it sinks a LED and lights up: api/act.py shows that as the click."""
     key, label, done, icon, color = ACTIONS[i]
     a, b = [(6, 88), (101, 188), (201, 286)][i]
-    top, fill, edge = 64, .14, .5
+    top = 65 if pressed else 64
+    fill, edge = (.36, 1) if pressed else (.14, .5)
     cells = {(c, r): hexc(mix(rgb(BG), rgb(color), edge if c in (a, b) or r in (top, top + 14) else fill))
              for c in range(a, b + 1) for r in range(top, top + 15) if not (c in (a, b) and r in (top, top + 14))}
     x = a + (b - a + 1 - (15 + text_width(label))) // 2
@@ -1347,17 +1349,48 @@ def pet_button(i):
     return cells | sprite(ICONS['reload'], {'C': color}, b - 9, top + 4)  # at the button's end, like the links' arrows: this click reloads
 
 
-def pet_head(i):
+def pet_head(i, pressed=False):
     """The switch's tile for the i-th pet in its fifth of the pet card: the head and its first pose, cropped
-    to the head."""
+    to the head. Pressed, the tile lights up in the pet card's pink."""
     other = PETS[list(PETS)[i]]
     c, h = 24 + 60 * i, other['head']  # c: the fifth's centre LED
-    tone, edge, fill = MUTED, .35, .03
+    tone, edge, fill = (PET, .7, .16) if pressed else (MUTED, .35, .03)
     cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - 20, c + 20) or r in (84, 102) else fill))
              for x in range(c - 20, c + 21) for r in range(84, 103) if not (x in (c - 20, c + 20) and r in (84, 102))}
     for rows in (other['body'], layer(other['frames'][0])):
         cells |= sprite([ln[:18] for ln in rows[:h]], other['colors'], c - 9, 101 - h)
     return cells
+
+
+def pet_press(do, kind=None):
+    """The click on a pet button, played back by api/act.py before it returns to the profile: the button
+    as it is on the card, then pressed, with what it did. Reduced motion shows it pressed straight away."""
+    if do == 'choose':
+        i = list(PETS).index(kind)
+        up, down, (c0, r0, c1, r1) = pet_head(i), pet_head(i, True), (24 + 60 * i - 20, 84, 24 + 60 * i + 20, 102)
+        name = PETS[kind]['name']
+        said, color = f'{name} ON STAGE', PET
+    else:
+        i = [a[0] for a in ACTIONS].index(do)
+        up, down = pet_button(i), pet_button(i, True)
+        (c0, c1), (r0, r1) = [(6, 88), (101, 188), (201, 286)][i], (64, 79)
+        said, color = {'feed': 'FED!', 'pet': 'PETTED!', 'play': 'PLAYED!'}[do], ACTIONS[i][4]
+    pad = 8
+    w = max(c1 - c0 + 1, text_width(said)) + 2 * pad
+    pn = Panel(w, (r1 - r0 + 1) + 34, width=w * 3 + 30)
+    dc, dr = (w - (c1 - c0 + 1)) // 2 - c0, 18 - r0  # the button, centred under the message
+
+    def at(cells):
+        return pn.draw({(c + dc, r + dr): v for (c, r), v in cells.items()})
+    plus = text('+1', (w + c1 - c0 + 1) // 2 - text_width('+1'), 10, color) if do != 'choose' else {}  # over the button's right end
+    body = (pn.draw(text(said, (w - text_width(said)) // 2, 6, color)) + f'<g class="up">{at(up)}</g><g class="down">{at(down)}</g>'
+            + f'<g class="plus">{pn.draw(plus)}</g>'
+            + pn.draw(text('BACK TO THE PROFILE...', (w - text_width('BACK TO THE PROFILE...', '3x5')) // 2, dr + r1 + 6, MUTED, '3x5')))
+    style = (f'.up{{opacity:0;animation:up .8s step-end both}}@keyframes up{{0%{{opacity:1}}18%,100%{{opacity:0}}}}'
+             f'.down{{animation:down .8s step-end both}}@keyframes down{{0%{{opacity:0}}18%,100%{{opacity:1}}}}'
+             f'.plus{{animation:plus .8s steps(5) both}}@keyframes plus{{0%,18%{{opacity:0;transform:translateY({pn.px(5)}px)}}'
+             f'19%{{opacity:1;transform:translateY({pn.px(5)}px)}}100%{{opacity:1;transform:none}}}}')
+    return pn.svg(said.replace('!', '').capitalize(), body, style)
 
 
 def pet_controls():
