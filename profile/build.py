@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 OUT = Path(__file__).parent
-IMG = OUT / 'img'  # what README.md shows; the SVGs beside build.py belong to the README before ?v=2, until it goes
+IMG = OUT / 'img'  # what README.md shows
 TODAY = dt.date.today()
 
 # --- fonts: Crypto LED Board src/led/font5x7.ts, font3x5.ts, font7x9.ts --------------
@@ -352,7 +352,6 @@ HERO_BAND = 25  # the top band ends above the photo's light
 DEVICE_LIVE = (216,)  # project bands: the device, its live clock and the card's right edge; the copy stays static
 # Every piece of a line has to be wide for its height: Chrome rounds widths to 1/64 px and a piece's height is its width
 # times its height-to-width ratio, so a tall, narrow strip ends up a pixel row off from its neighbours.
-LEGACY = dict(device=(216, 284), legacy=True)  # what api/ serves without ?v=2: the README before it, pink Cadran, edge strips
 
 
 SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED panel, 6 LEDs clear of the cuts
@@ -951,7 +950,7 @@ def projects_mark(col, row, size=16):
     return cells
 
 
-def projects_card(downloads=None, now=None, only=None, device=DEVICE_LIVE, legacy=False):
+def projects_card(downloads=None, now=None, only=None):
     """The projects as one card in four bands: the heading, then Cadran, Lift and LED Board. Each band is
     an image of its own so README.md can link it; api/cadran.py and api/lift.py serve theirs live (the
     download count, the clocks), the build writes the other two. The live bands come as (margin, live
@@ -960,14 +959,14 @@ def projects_card(downloads=None, now=None, only=None, device=DEVICE_LIVE, legac
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | title('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))
     makers = [lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''),
-              lambda b: cadran(b, downloads, now, legacy), lambda b: lift(b, None, now), lambda b: board(b)]
+              lambda b: cadran(b, downloads, now), lambda b: lift(b, None, now), lambda b: board(b)]
     tops = [0, 32, 108, 184, 260]
     out = []
     for i, make in enumerate(makers):
         if only is None or i == only:
             alt, body, css = make(pn.at_row(tops[i]))
             band = dict(top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
-            out += columns(pn, device, [alt, alt] + [''] * (len(device) - 1), body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
+            out += columns(pn, DEVICE_LIVE, [alt, alt], body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
     return out
 
 
@@ -1037,13 +1036,10 @@ def iphone(color):
             | slab(233, 3, 34, 62, 6, mix(tint, white, .5), mix(tint, dark, .3)) | slab(234, 4, 32, 60, 6, (14, 14, 18), (14, 14, 18)))
 
 
-def cadran(pn, downloads=None, now=None, legacy=False):
+def cadran(pn, downloads=None, now=None):
     """Cadran on an iMac desktop: its Titan face on the wallpaper, with the menu bar, folders and dock.
-    `downloads` comes live from the counter cadranapp.com keeps (api/cadran.py). `legacy`: the pink look of
-    the README before ?v=2, until that README is gone."""
-    accent, top, bottom, ink, dock_top, dock_bottom = (
-        ('#FF7A9A', (205, 98, 124), (176, 82, 106), (70, 30, 42), (226, 150, 170), (204, 128, 150)) if legacy else
-        (CADRAN, (236, 124, 38), (196, 92, 18), (64, 30, 8), (246, 172, 112), (224, 146, 88)))
+    `downloads` comes live from the counter cadranapp.com keeps (api/cadran.py)."""
+    accent, top, bottom, ink, dock_top, dock_bottom = CADRAN, (236, 124, 38), (196, 92, 18), (64, 30, 8), (246, 172, 112), (224, 146, 88)
 
     def demo(pn):
         wall = {(225 + c, 5 + r): hexc(mix(top, bottom, r / 32)) for r in range(33) for c in range(54)}
@@ -1060,10 +1056,7 @@ def cadran(pn, downloads=None, now=None, legacy=False):
         for i, colors in enumerate([('#4A9BFF',), ('#B63D60', '#E2522A'), ('#4CD964',), ('#FFB340',), ('#C8C8D0',)]):
             dock |= {(239 + i * 4 + c, 34 + r): colors[min(c * len(colors) // 3, len(colors) - 1)] for c in range(3) for r in range(2)}
         count = {}  # under the iMac: live, so in the device's column
-        if downloads and legacy:
-            label = f'{downloads:,} DOWNLOADS'
-            count = text(label, 252 - text_width(label, '3x5') // 2, 57, accent, '3x5')
-        elif downloads:
+        if downloads:
             label = f'{downloads:,} DOWNLOADS'
             w = 7 + text_width(label, '3x5')
             x = min(252 - w // 2, 284 - w)  # centred under the iMac, but inside the card
@@ -1330,9 +1323,10 @@ def pet_card():
     return Panel(290, 106, width=900)
 
 
-def pet_panel(state=None, now=None, strut=None):
-    """The live top of the pet card as (margin, live part), see columns, laid out like a project card: the
-    pet, its copy and a stats box. api/pet.py serves the live part; the buttons below it are static, see pet_controls."""
+def pet_panel(state=None, now=None):
+    """The live top of the pet card, laid out like a project card: the pet, its copy and a stats box. One image,
+    served by api/pet.py: it loads below the fold, where its arrival moves nothing in view. The buttons below it
+    are static, see pet_controls."""
     state, now = state or pet_state(), now or dt.datetime.now(dt.timezone.utc)
     last = state['last']
     awake = last and now - dt.datetime.fromisoformat(last['at']) <= dt.timedelta(days=2)
@@ -1398,8 +1392,7 @@ def pet_panel(state=None, now=None, strut=None):
     summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
                f"played with {state['play']} times. {visit}")
     art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    cuts = [] if strut is None else [strut]  # whole: it loads below the fold, where its arrival moves nothing in view
-    return columns(pn, cuts, [''] * len(cuts) + [summary], art_, css + prop_css, bottom=PET_CUT)
+    return columns(pn, [], [summary], art_, css + prop_css, bottom=PET_CUT)[0]
 
 
 def pet_button(i, pressed=False):
