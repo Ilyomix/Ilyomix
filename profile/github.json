@@ -1,6 +1,6 @@
 {
- "contributions": 2342,
- "commits": 251,
+ "contributions": 2344,
+ "commits": 253,
  "prs": 6,
  "repos": 18,
  "stars": 14,
@@ -8,25 +8,74 @@
  "languages": [
   [
    "TypeScript",
-   "#3178c6",
-   0.699
+   11193329
+  ],
+  [
+   "Swift",
+   3206009
   ],
   [
    "Python",
-   "#3572A5",
-   0.081
+   1491090
   ],
   [
    "JavaScript",
-   "#f1e05a",
-   0.07
+   665964
   ],
   [
    "HTML",
-   "#e34c26",
-   0.07
+   375397
+  ],
+  [
+   "CSS",
+   198702
+  ],
+  [
+   "PLpgSQL",
+   97856
+  ],
+  [
+   "Shell",
+   87254
+  ],
+  [
+   "Vue",
+   47588
+  ],
+  [
+   "Objective-C",
+   39090
+  ],
+  [
+   "C++",
+   24348
+  ],
+  [
+   "Jinja",
+   23548
+  ],
+  [
+   "Java",
+   8531
+  ],
+  [
+   "Perl",
+   8066
+  ],
+  [
+   "SCSS",
+   4110
+  ],
+  [
+   "Dockerfile",
+   1784
+  ],
+  [
+   "Makefile",
+   1080
   ]
  ],
+ "language_repos": 37,
  "weeks": [
   "0101000",
   "0000000",

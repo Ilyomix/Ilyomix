@@ -1414,11 +1414,22 @@ def board(pn):
 GH = '#39D353'  # GitHub's contribution green
 GITHUB_USER = 'Ilyomix'
 STATS_QUERY = ('{ user(login: "%s") { followers { totalCount } '
-               'repositories(ownerAffiliations: OWNER, privacy: PUBLIC, isFork: false, first: 100) { totalCount nodes { stargazerCount '
-               'languages(first: 6, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name color } } } } } '
+               'repositories(ownerAffiliations: OWNER, privacy: PUBLIC, isFork: false, first: 100) { totalCount nodes { stargazerCount } } '
+               'code: repositories(ownerAffiliations: OWNER, isFork: false, first: 100) { totalCount nodes { isPrivate '
+               'languages(first: 50, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name } } } } } '
                'contributionsCollection { totalCommitContributions totalPullRequestContributions '
                'contributionCalendar { totalContributions weeks { contributionDays { contributionLevel date } } } } } }' % GITHUB_USER)
-LANG_SHORT = {'TypeScript': 'TS', 'JavaScript': 'JS', 'Python': 'PY'}
+
+# Languages wear the reference data-viz palette's dark steps, one per language, never by rank: this mapping
+# passes its validator against the panel (adjacent colour-blind ΔE >= 8.4, normal-vision >= 19.3) in the bar's
+# order, and still does if SQL and Shell, 0.06 points apart, trade places. Up to 8 get a colour; the rest fold
+# into OTHER, in gray, and are named under the legend.
+LANG_COLORS = {'TypeScript': '#3987E5', 'Swift': '#D95926', 'Python': '#199E70', 'JavaScript': '#C98500',
+               'HTML': '#D55181', 'CSS': '#9085E9', 'PLpgSQL': '#E66767', 'Shell': '#008300'}
+LANG_SPARE = ['#3987E5', '#D95926', '#199E70', '#C98500', '#D55181', '#008300', '#9085E9', '#E66767']  # the palette's order
+# ponytail: a language outside LANG_COLORS that reaches the top 8 takes the first spare slot unvalidated; re-run the
+# palette validator and extend LANG_COLORS when that happens.
+LANG_NAMES = {'PLpgSQL': 'SQL', 'Objective-C': 'OBJ-C', 'Dockerfile': 'Docker', 'Makefile': 'Make'}  # names that fit the legend
 STAT_ICONS = {  # 5x5, beside each count
     'commit': ['.....', '.CCC.', 'CC.CC', '.CCC.', '.....'],
     'pr': ['C...C', 'C...C', 'C..C.', 'C.C..', 'CC...'],  # a branch merging back
@@ -1430,33 +1441,72 @@ STAT_ICONS = {  # 5x5, beside each count
 
 
 def import_stats():
-    """Refreshes github.json through the gh CLI: logged in on a Mac, GH_TOKEN in the workflow."""
+    """Refreshes github.json through the gh CLI: logged in on a Mac, GH_TOKEN in the workflow. Languages count
+    every repo, private ones included, so they only refresh where the token can see those (gh on the Mac);
+    the workflow's token can't, and keeps the stored ones rather than dropping Swift and the rest."""
     import subprocess
     u = json.loads(subprocess.run(['gh', 'api', 'graphql', '-f', f'query={STATS_QUERY}'],
                                   check=True, capture_output=True, text=True).stdout)['data']['user']
-    c, sizes, colors = u['contributionsCollection'], {}, {}
-    for repo in u['repositories']['nodes']:
+    c, sizes = u['contributionsCollection'], {}
+    for repo in u['code']['nodes']:
         for e in repo['languages']['edges']:
-            name = e['node']['name']
-            sizes[name], colors[name] = sizes.get(name, 0) + e['size'], e['node']['color'] or MUTED
-    total = sum(sizes.values()) or 1
+            sizes[e['node']['name']] = sizes.get(e['node']['name'], 0) + e['size']
+    old = json.loads((OUT / 'github.json').read_text()) if (OUT / 'github.json').exists() else {}
+    if any(r['isPrivate'] for r in u['code']['nodes']) or 'language_repos' not in old:
+        languages, language_repos = sorted(sizes.items(), key=lambda kv: -kv[1]), u['code']['totalCount']
+    else:
+        languages, language_repos = old['languages'], old['language_repos']
     levels = ['NONE', 'FIRST_QUARTILE', 'SECOND_QUARTILE', 'THIRD_QUARTILE', 'FOURTH_QUARTILE']
     (OUT / 'github.json').write_text(json.dumps({
         'contributions': c['contributionCalendar']['totalContributions'], 'commits': c['totalCommitContributions'],
         'prs': c['totalPullRequestContributions'], 'repos': u['repositories']['totalCount'],
         'stars': sum(r['stargazerCount'] for r in u['repositories']['nodes']), 'followers': u['followers']['totalCount'],
-        'languages': [[n, colors[n], round(sz / total, 3)] for n, sz in sorted(sizes.items(), key=lambda kv: -kv[1])[:4]],
+        'languages': [list(kv) for kv in languages], 'language_repos': language_repos,  # [name, bytes], largest first
         'weeks': [''.join(str(levels.index(d['contributionLevel'])) for d in w['contributionDays']) for w in c['contributionCalendar']['weeks']],
         'first': c['contributionCalendar']['weeks'][0]['contributionDays'][0]['date'],
     }, indent=1) + '\n')
 
 
+def pct(share):
+    """'64%', or '0.6%' under one percent, where a whole number would round to nothing."""
+    return f'{round(100 * share)}%' if share >= .0095 else f'{100 * share:.1f}%'
+
+
+def languages(g, slots=8):
+    """The bar's segments as (name, share, colour), largest first: up to `slots` languages in their own colour,
+    then OTHER in gray; and the languages folded into OTHER."""
+    total = sum(b for _, b in g['languages']) or 1
+    top, rest = g['languages'][:slots], g['languages'][slots:]
+    spare = [c for c in LANG_SPARE if c not in {LANG_COLORS.get(n) for n, _ in top}]
+    segs = [(n, b / total, LANG_COLORS.get(n) or spare.pop(0)) for n, b in top]
+    if rest:
+        segs.append(('OTHER', sum(b for _, b in rest) / total, '#7A7266'))
+    return segs, [n for n, _ in rest]
+
+
 def github():
-    """GitHub activity, refreshed daily by the workflow (`build.py stats`): the year's contributions as an
-    LED calendar, the counts beside it, and the languages across the public repos."""
+    """GitHub activity, refreshed daily by the workflow (`build.py stats`): the year's contributions as an LED
+    calendar with the counts in a lit box beside it, then every language the code is written in, as a stacked bar
+    with its legend. Languages count private repos too, see import_stats."""
     g = json.loads((OUT / 'github.json').read_text())
-    pn = Panel(284, 80)  # rows: title 6, line 23, legend 34, grid 42-61, months 65, years 72
-    sub, right = f"{g['contributions']:,} CONTRIBUTIONS IN 12 MONTHS", 186  # the counts' column starts at `right`
+    segs, folded = languages(g)
+    footnote = 'OTHER: ' + ', '.join(LANG_NAMES.get(n, n).upper() for n in folded) if folded else ''
+    lines_ = []  # the footnote, wrapped to the band's width
+    for word in footnote.split(' ') if footnote else []:
+        if lines_ and text_width(lines_[-1] + ' ' + word, '3x5') <= 276:
+            lines_[-1] += ' ' + word
+        else:
+            lines_.append(word)
+    rows_ = -(-len(segs) // 3)  # legend rows, three entries each
+    # rows: title 6, line 23, legend 34, grid 42-61, months 65, years 72, box 4-77; then the languages band: a rule,
+    # five clear rows, LANGUAGES, six clear rows, the bar, six, the legend (five clear rows between its lines),
+    # six, the footnote, five at the bottom
+    rule, head, bar = 82, 88, 101
+    legend = bar + 3 + 6
+    foot = legend + 10 * rows_ + 1  # six clear rows after the legend's last line
+    bottom = foot + 7 * len(lines_) - 2 if lines_ else legend + 10 * rows_ - 5  # one past the last lit row
+    pn = Panel(284, bottom + 5)
+    sub, right = f"{g['contributions']:,} CONTRIBUTIONS IN 12 MONTHS", 186  # the counts' box starts at `right`
     assert 40 + text_width(sub, '3x5') < right - 3, 'the contributions line runs into the counts'
     cells = tile('github', 6, 6, GH) | card_text('GITHUB', f'@{GITHUB_USER.upper()}', sub, [], None, 40, GH, None)
     shade = [RULE] + [hexc(mix(rgb(BG), rgb(GH), t)) for t in (.3, .5, .75, 1)]
@@ -1478,25 +1528,37 @@ def github():
     cells |= text('MORE', x, 34, MUTED, '3x5')
     cells |= {(x - 17 + i * 3 + a, 35 + b): shade[i] for i in range(5) for a in (0, 1) for b in (0, 1)}
     cells |= text('LESS', x - 19 - text_width('LESS', '3x5'), 34, MUTED, '3x5')
+    cells |= bezel(right + 2, 6, 92, 70, GH)  # the counts in a lit box, like the pet's stats
     for i, (icon, label, v) in enumerate([('commit', 'COMMITS', g['commits']), ('pr', 'PULL REQUESTS', g['prs']),
                                           ('repo', 'PUBLIC REPOS', g['repos']), ('star', 'STARS', g['stars']), ('follower', 'FOLLOWERS', g['followers'])]):
-        cells |= (sprite(STAT_ICONS[icon], {'C': GH}, right, 8 + i * 11) | text(label, right + 8, 8 + i * 11, MUTED, '3x5')
-                  | text(f'{v:,}', 282, 7 + i * 11, CREAM, anchor='end'))
-    x, legend = right, []
-    for name, color, share in [*g['languages'], ['OTHER', MUTED, max(0, 1 - sum(l[2] for l in g['languages']))]]:
-        w = round((282 - right) * share) if name != 'OTHER' else 282 - x
-        cells |= {(c, r): color for c in range(x, min(x + w, 282)) for r in (67, 68)}
-        x += w
-        if name != 'OTHER' and len(legend) < 3:
-            readable = color if contrast(color, BG) >= 4.5 else hexc(mix(rgb(color), (255, 255, 255), .35))
-            legend.append((f'{LANG_SHORT.get(name, name.upper())} {round(100 * share)}%', readable))
-    x = right
-    for label, color in legend:
-        cells |= text(label, x, 72, color, '3x5')
-        x += text_width(label, '3x5') + 6
+        r = 12 + i * 13
+        cells |= (sprite(STAT_ICONS[icon], {'C': GH}, right + 6, r + 1) | text(label, right + 14, r + 1, MUTED, '3x5')
+                  | text(f'{v:,}', 277, r, CREAM, anchor='end'))
+    # Languages: a stacked bar, segments a lit LED apart, the data end rounded; a legend table in the text inks,
+    # each name beside a swatch of its colour; then the languages folded into OTHER, by name.
+    cells |= {(c, rule): RULE for c in range(0, pn.cols, 2)}
+    cells |= sprite(['..C.C..', '.C...C.', 'C.....C', '.C...C.', '..C.C..'], {'C': GH}, 6, head + 1)  # < >, level with the title's caps
+    cells |= text('LANGUAGES', 16, head, CREAM) | text(f"ACROSS {g['language_repos']} REPOS, PUBLIC AND PRIVATE", 282, head + 2, MUTED, '3x5', anchor='end')
+    fill = 276 - (len(segs) - 1)  # LEDs left for the segments once the gaps are out
+    widths = [max(2, round(share * fill)) for _, share, _ in segs]  # the smallest still shows
+    widths[0] += fill - sum(widths)
+    x = 6
+    for (name, share, color), w in zip(segs, widths):
+        cells |= {(c, r): color for c in range(x, x + w) for r in range(bar, bar + 3)}
+        x += w + 1
+    for corner in ((281, bar), (281, bar + 2)):
+        cells.pop(corner, None)
+    for i, (name, share, color) in enumerate(segs):
+        x, r = 6 + (i % 3) * 95, legend + (i // 3) * 10
+        cells |= ({(x + a, r + 1 + b): color for a in range(3) for b in range(3)}
+                  | text(LANG_NAMES.get(name, name).upper(), x + 6, r, CREAM, '3x5') | text(pct(share), x + 86, r, MUTED, '3x5', anchor='end'))
+    for i, ln in enumerate(lines_):
+        cells |= text(ln, 6, foot + 7 * i, MUTED, '3x5')
+    langs = ', '.join(f'{LANG_NAMES.get(n, n)} {pct(sh)}' for n, sh, _ in segs if n != 'OTHER')
+    other = f", and {pct(segs[-1][1])} in {', '.join(LANG_NAMES.get(n, n) for n in folded)}" if folded else ''
     alt = (f"GitHub activity for @{GITHUB_USER}: {g['contributions']:,} contributions in the last year, {g['commits']:,} commits, "
-           f"{g['prs']} pull requests, {g['repos']} public repos, {g['stars']} stars, {g['followers']} followers. Top languages: "
-           + ', '.join(f'{n} {round(100 * s)}%' for n, _, s in g['languages'][:3]) + '.')
+           f"{g['prs']} pull requests, {g['repos']} public repos, {g['stars']} stars, {g['followers']} followers. "
+           f"Languages across {g['language_repos']} repos, public and private: {langs}{other}.")
     return pn.svg(alt, pn.draw(cells))
 
 
