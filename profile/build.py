@@ -1422,7 +1422,7 @@ STATS_QUERY = ('{ user(login: "%s") { followers { totalCount } '
 # Languages wear the reference data-viz palette's dark steps, one per language, never by rank: this mapping
 # passes its validator against the panel (adjacent colour-blind ΔE >= 8.4, normal-vision >= 19.3) in the bar's
 # order, and still does if SQL and Shell, 0.06 points apart, trade places. Up to 8 get a colour; the rest fold
-# into OTHER, in gray, and are named under the legend.
+# into OTHERS, in gray, and are named under the legend.
 LANG_COLORS = {'TypeScript': '#3987E5', 'Swift': '#D95926', 'Python': '#199E70', 'JavaScript': '#C98500',
                'HTML': '#D55181', 'CSS': '#9085E9', 'PLpgSQL': '#E66767', 'Shell': '#008300'}
 LANG_SPARE = ['#3987E5', '#D95926', '#199E70', '#C98500', '#D55181', '#008300', '#9085E9', '#E66767']  # the palette's order
@@ -1473,13 +1473,13 @@ def pct(share):
 
 def languages(g, slots=8):
     """The bar's segments as (name, share, colour), largest first: up to `slots` languages in their own colour,
-    then OTHER in gray; and the languages folded into OTHER."""
+    then OTHERS in gray; and the languages folded into OTHERS."""
     total = sum(b for _, b in g['languages']) or 1
     top, rest = g['languages'][:slots], g['languages'][slots:]
     spare = [c for c in LANG_SPARE if c not in {LANG_COLORS.get(n) for n, _ in top}]
     segs = [(n, b / total, LANG_COLORS.get(n) or spare.pop(0)) for n, b in top]
     if rest:
-        segs.append(('OTHER', sum(b for _, b in rest) / total, '#7A7266'))
+        segs.append(('OTHERS', sum(b for _, b in rest) / total, '#7A7266'))
     return segs, [n for n, _ in rest]
 
 
@@ -1489,7 +1489,7 @@ def github():
     with its legend. Languages count private repos too, see import_stats."""
     g = json.loads((OUT / 'github.json').read_text())
     segs, folded = languages(g)
-    footnote = 'OTHER: ' + ', '.join(LANG_NAMES.get(n, n).upper() for n in folded) if folded else ''
+    footnote = 'OTHERS: ' + ', '.join(LANG_NAMES.get(n, n).upper() for n in folded) if folded else ''
     lines_ = []  # the footnote, wrapped to the band's width
     for word in footnote.split(' ') if footnote else []:
         if lines_ and text_width(lines_[-1] + ' ' + word, '3x5') <= 276:
@@ -1534,7 +1534,7 @@ def github():
         cells |= (sprite(STAT_ICONS[icon], {'C': GH}, right + 6, r + 1) | text(label, right + 14, r + 1, MUTED, '3x5')
                   | text(f'{v:,}', 277, r, CREAM, anchor='end'))
     # Languages: a stacked bar, segments a lit LED apart, the data end rounded; a legend table in the text inks,
-    # each name beside a swatch of its colour; then the languages folded into OTHER, by name.
+    # each name beside a swatch of its colour; then the languages folded into OTHERS, by name.
     cells |= {(c, rule): RULE for c in range(0, pn.cols, 2)}
     cells |= sprite(['..C.C..', '.C...C.', 'C.....C', '.C...C.', '..C.C..'], {'C': GH}, 6, head + 1)  # < >, level with the title's caps
     cells |= text('LANGUAGES', 16, head, CREAM) | text(f"ACROSS {g['language_repos']} REPOS, PUBLIC AND PRIVATE", 282, head + 2, MUTED, '3x5', anchor='end')
@@ -1553,7 +1553,7 @@ def github():
                   | text(LANG_NAMES.get(name, name).upper(), x + 6, r, CREAM, '3x5') | text(pct(share), x + 86, r, MUTED, '3x5', anchor='end'))
     for i, ln in enumerate(lines_):
         cells |= text(ln, 6, foot + 7 * i, MUTED, '3x5')
-    langs = ', '.join(f'{LANG_NAMES.get(n, n)} {pct(sh)}' for n, sh, _ in segs if n != 'OTHER')
+    langs = ', '.join(f'{LANG_NAMES.get(n, n)} {pct(sh)}' for n, sh, _ in segs if n != 'OTHERS')
     other = f", and {pct(segs[-1][1])} in {', '.join(LANG_NAMES.get(n, n) for n in folded)}" if folded else ''
     alt = (f"GitHub activity for @{GITHUB_USER}: {g['contributions']:,} contributions in the last year, {g['commits']:,} commits, "
            f"{g['prs']} pull requests, {g['repos']} public repos, {g['stars']} stars, {g['followers']} followers. "
