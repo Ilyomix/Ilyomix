@@ -226,6 +226,12 @@ def polar(center, r, deg):
     return round(center[0] + r * math.sin(a)), round(center[1] - r * math.cos(a))
 
 
+# The LEDs' glow: (filter id suffix, blur radius in LED pitches, the image's display scale at or below which it applies).
+# A fixed radius blurs the panels on a phone, where an LED is barely a pixel; media queries inside an <img>'s SVG
+# see the size it is shown at, so each image switches by its own scale: slices and full bands stay alike.
+BLOOM = (('', .6, None), ('-m', .4, .75), ('-s', .22, .5))
+
+
 @functools.lru_cache(maxsize=16)
 def card_edge(p, x, width, height, corner):
     """Panel.edge for one card size. It depends on the geometry alone and was most of a live render's
@@ -304,12 +310,13 @@ class Panel:
                 f'<defs><pattern id="dot" {dots} fill="#fff"/></pattern><pattern id="off" {dots} fill="{OFF}"/></pattern>'
                 f'<mask id="leds" maskUnits="userSpaceOnUse" x="0" y="0" {card}><rect {card} fill="url(#dot)"/></mask>'
                 f'<clipPath id="screen"><rect {area}/></clipPath>'
-                f'<filter id="bloom" x="-3%" y="-3%" width="106%" height="106%"><feGaussianBlur stdDeviation="{num(p * .6)}" result="b"/>'
-                f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>{defs}</defs>'
-                f'<style>{style}'
-                f'@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}</style>'
+                + ''.join(f'<filter id="bloom{k}" x="-3%" y="-3%" width="106%" height="106%"><feGaussianBlur stdDeviation="{num(p * r)}" result="b"/>'
+                          f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' for k, r, _ in BLOOM)
+                + f'{defs}</defs><style>{style}'
+                + ''.join(f'@media (max-width:{num(vw * at)}px){{.lit{{filter:url(#bloom{k})}}}}' for k, _, at in BLOOM[1:])
+                + f'@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}</style>'
                 f'<path d="{shape}" fill="#0B0907"/><rect {area} fill="{BG}"/><rect {area} fill="url(#off)"/>'
-                f'<g filter="url(#bloom)"><g mask="url(#leds)">{self.draw(ring)}</g>'
+                f'<g class="lit" filter="url(#bloom)"><g mask="url(#leds)">{self.draw(ring)}</g>'
                 f'<g mask="url(#leds)" clip-path="url(#screen)">{body}</g></g></svg>')
 
 
