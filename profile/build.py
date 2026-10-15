@@ -1050,16 +1050,16 @@ def hero(n=None):
             + columns(pn, [], [still], body, style, defs, top=HERO_BAND))
 
 
-def card_text(name, tag, sub, lines, foot, left, accent, screen=223):
-    """Title and framed tag, a line in the accent right under it, three lines of copy, then an optional
-    footer in the accent. With `screen`, also the bezel of a screen on the right, whose contents (from that
-    column, rows 4-51) are the caller's; the project cards draw a device there instead."""
+def card_text(name, tag, sub, lines, foot, left, accent, screen=223, copy=36):
+    """Title and framed tag, a line in the accent right under it, three lines of copy from row `copy`, then an
+    optional footer in the accent. With `screen`, also the bezel of a screen on the right, whose contents (from
+    that column, rows 4-51) are the caller's; the project cards draw a device there instead."""
     name_w, tag_w = title_width(name), text_width(tag, '3x5')
     assert left + max([name_w + 12 + tag_w, *(text_width(t, '3x5') for t in [sub, *lines, foot or ''])]) < 220, name
     cells = ({} if screen is None else bezel(screen, 4, 57, 48, accent)) | title(name, left, 6, accent) | text(tag, left + name_w + 8, 10, MUTED, '3x5')
     cells |= frame(left + name_w + 5, 7, left + name_w + 10 + tag_w, 16, RULE) | text(sub, left, 23, accent, '3x5')
     for i, ln in enumerate(lines):
-        cells |= text(ln, left, 36 + i * 8, CREAM, '3x5')
+        cells |= text(ln, left, copy + i * 8, CREAM, '3x5')
     return cells | (text(foot, left, 61, accent, '3x5') if foot else {})
 
 
@@ -1822,20 +1822,25 @@ def pet_panel(state=None, now=None):
     pn, left = pet_card(), 76
     scene, css = pet_scene(kind, last['action'] if awake else 'sleep')  # the same for every view of this state: cached
     verb, when = visit_verb(last), last and ago(last['at'], now)
-    did = {'feed': 'FED', 'pet': 'PETTED', 'play': 'PLAYED', 'choose': 'PICKED'}[last['action']] if last else ''  # the pet's name is the title
-    foot = f'LAST VISITOR: {did} · {when}' if last else 'NO VISITORS YET. BE THE FIRST!'
-    info = card_text(name, f"PROFILE {pet['noun']}", foot, ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
-                                                          f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], screen=229)
+    said = ['NO VISITORS YET. BE THE FIRST!']
+    if last:  # one sentence over two lines: on its own, a city read as the counts' place, not the visitor's
+        head, room = 'LAST VISITOR FROM ', 219 - left  # the copy ends before column 220
+        place = last['where']
+        if text_width(head + place, '3x5') > room and ', ' in place:  # a long city drops the country first
+            place = place.split(', ')[0]
+        while text_width(head + place, '3x5') > room:
+            place = place[:-1].rstrip(' ,')
+        did = f'HAS {verb} · {when}'
+        said = [head + place, did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
+    info = card_text(name, f"PROFILE {pet['noun']}", '', ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
+                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], screen=229,
+                     copy=37)  # a row lower, under the sentence
+    for i, ln in enumerate(said):  # in the accent like card_text's line, a row higher so two fit
+        info |= text(ln, left, 22 + 7 * i, pet['accent'], '3x5')
     mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
     info |= text('MOOD', 232, 7, MUTED, '3x5') | text(mood, 283, 7, mood_color, '3x5', anchor='end') | hline(229, 285, 14, RULE)
-    place = last['where'] if last else 'NO VISITORS'
-    if text_width(place, '3x5') > 47 and ', ' in place:  # 47 LEDs after the pin: a long city drops the country first
-        place = place.split(', ')[0]
-    while text_width(place, '3x5') > 47:
-        place = place[:-1].rstrip(' ,')
-    info |= hline(229, 285, 44, RULE) | sprite(['CCC', 'C.C', 'CCC', '.C.', '.C.'], {'C': pet['accent']}, 232, 47) | text(place, 283, 47, CREAM, '3x5', anchor='end')
-    for i, (key, label, done, icon, color) in enumerate(ACTIONS):
-        info |= text(done, 232, 19 + i * 9, color, '3x5') | text(str(min(state[key], 9999)), 283, 17 + i * 9, CREAM, anchor='end')
+    for i, (key, label, done, icon, color) in enumerate(ACTIONS):  # the totals, spread over the rest of the screen
+        info |= text(done, 232, 21 + i * 11, color, '3x5') | text(str(min(state[key], 9999)), 283, 19 + i * 11, CREAM, anchor='end')
     Name = name.capitalize()
     visit = (f"Last visit: someone from {last['where'].title()} {verb.lower().replace(name.lower(), Name)}, {when.lower()}."
              if last else 'No visits yet.')
