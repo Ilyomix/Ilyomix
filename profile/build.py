@@ -333,13 +333,20 @@ def slices(pn, titles, body, style='', defs='', top=None, bottom=None, indices=N
     return [pn.svg(titles[i], body, style, defs, view=(i * w, y0, w, y1 - y0)) for i in indices]
 
 
-def margin_and_rest(pn, alt, body, style='', defs='', top=None, bottom=None):
-    """A live band as two images: the card's left margin (frame only, no LEDs), which the build writes, and
-    the rest, which api/ draws on each view. README.md puts them on one line: the margin comes with the
-    other static files and holds the band's height, so when the live part lands nothing below it moves."""
+def columns(pn, cuts, titles, body, style='', defs='', top=None, bottom=None):
+    """A band of a card as images side by side, cut between LED columns (`cuts`; 0 sets the left margin
+    apart). A live band puts only its live column on api/ and the rest in the repo: README.md sets the
+    pieces on one line, so the static ones arrive with the page, already show the card and hold its height,
+    and only the live column fills in, in a slot that is already there."""
     y0 = 0 if top is None else pn.y + top * pn.p
     y1 = pn.height if bottom is None else pn.y + bottom * pn.p
-    return pn.svg('', '', view=(0, y0, pn.x, y1 - y0)), pn.svg(alt, body, style, defs, view=(pn.x, y0, pn.width - pn.x, y1 - y0))
+    xs = [0, *(pn.x + c * pn.p for c in cuts), pn.width]
+    return [pn.svg(t, body, style, defs, view=(a, y0, b - a, y1 - y0)) for t, a, b in zip(titles, xs, xs[1:])]
+
+
+HERO_LIVE = (146, 239)  # the counter's columns in the hero's top band: all that depends on the visitor
+HERO_BAND = 25  # the top band ends above the photo's light
+DEVICE_LIVE = (216, 284)  # project bands: the device and its live clock; the copy and the card's right edge stay static
 
 
 SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED panel, 6 LEDs clear of the cuts
@@ -810,8 +817,8 @@ def years():
 
 
 def hero(n=None):
-    """The header as (margin, live part), see margin_and_rest; api/hero.py serves the live part. n is the
-    visitor number (None when the count is unavailable)."""
+    """The header as four images, see columns: the top band in three (greeting, the live counter, "I'M:"),
+    then the rest. api/hero.py serves the counter. n is the visitor number (None when the count is out)."""
     pn = Panel(284, 101)  # rows: border 0, counter housing 5-23, photo and text 28-79, rule 84, ticker 89-95, border 100: 4 clear rows between each
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
@@ -826,17 +833,18 @@ def hero(n=None):
     for i, (ln, icon) in enumerate(lines):  # each line ends on its emoji
         intro |= text(ln, 68, 60 + i * 7, MUTED, '3x5') | emoji(icon, 68 + text_width(ln, '3x5') + 4, 60 + i * 7)
     assert max(c for c, _ in {**name, **intro}) < pn.cols - 2
-    chase = {(c, r): RULE for c in range(-3, pn.cols + 3, 3) for r in (0, pn.rows - 1)}
+    chase = {(c, pn.rows - 1): RULE for c in range(-3, pn.cols + 3, 3)}  # marching along the bottom only: the top
+    border = {(c, 0): RULE for c in range(0, pn.cols, 3)}  # crosses the counter's cut, and pieces can't march in step
     lead = 'HELLO VISITOR NUMBER #'  # then the counter, then "I'M:", which leads into the name below
     x = 11 + text_width(lead) + 6  # 4 clear LEDs each side of the housing
     hello, reels, count_css = drums(pn, n, x, 7)
     hello = bezel(x, 7, 7 * 11 + 6 * 2, 15, MUTED) | hello  # the counter's housing
-    live = '' if n is None else f'<g class="live">{pn.draw({(c, r): RED for c in (6, 7) for r in (13, 14)})}</g>'
+    live = f'<g class="live">{pn.draw({(c, r): RED for c in (6, 7) for r in (13, 14)})}</g>'  # static, so lit even when the count is out
     glow = halo(6, 28, 52, 52, CREAM, reach=3, rad=.14 * 52, power=.18) | outline(6, 28, 52, CREAM, .14)  # light around the photo
     body = (pn.draw(glow | art('avatar', 6, 28, .14))
             + f'<g clip-path="url(#typed)">{pn.draw(name)}<g clip-path="url(#band)">{pn.draw(title("ILYES ABD-LILLAH", 68, 28, "#FFFFFF", decor=True))}</g></g>'
             + f'<g class="type"><g class="caret">{pn.draw(hline(68 + typed + 2, 68 + typed + 11, 43, CREAM) | hline(68 + typed + 2, 68 + typed + 11, 44, CREAM))}</g></g>'
-            + pn.draw(text('SENIOR TECH LEAD · DESIGN ENGINEER', 68, 47, CREAM) | intro | hline(0, pn.cols - 1, 84, RULE))
+            + pn.draw(text('SENIOR TECH LEAD · DESIGN ENGINEER', 68, 47, CREAM) | intro | hline(0, pn.cols - 1, 84, RULE) | border)
             + f'<g class="chase">{pn.draw(chase)}</g><g class="tick">{pn.draw(tick)}</g>'
             + pn.draw(hello | text(lead, 11, 11, CREAM) | text("I'M:", x + 7 * 11 + 6 * 2 + 6, 11, CREAM)) + reels + live)
     # The name types itself: a mask that uncovers it a letter at a time, an underscore cursor that follows
@@ -850,12 +858,13 @@ def hero(n=None):
              f'.sweep{{transform:translateX(-{pn.px(80)}px);animation:sweep 8s 2.5s infinite}}'
              f'@keyframes sweep{{0%{{transform:none;animation-timing-function:steps(52)}}25%,100%{{transform:translateX({pn.px(208)}px)}}}}'
              f'.chase{{animation:chase .9s steps(3) infinite}}@keyframes chase{{to{{transform:translateX(-{pn.px(3)}px)}}}}'
-             + scroll('tick', length, 14, pn) + count_css
-             + ('' if n is None else '.live{animation:live 1.2s step-end infinite}@keyframes live{50%{opacity:0}}'))
+             + scroll('tick', length, 14, pn) + count_css + '.live{animation:live 1.2s step-end infinite}@keyframes live{50%{opacity:0}}')
     alt = (f'Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. '
            f'{years()}+ years of product interfaces, design systems and native apps for the Mac and iPhone.'
            + ('' if n is None else f' Hello, visitor number {n}!'))  # the alt keeps the greeting short
-    return margin_and_rest(pn, alt, body, style, defs)
+    still = alt.split(' Hello,')[0]
+    return (columns(pn, HERO_LIVE, ['', alt, ''], body, style, defs, bottom=HERO_BAND)
+            + columns(pn, [], [still], body, style, defs, top=HERO_BAND))
 
 
 def card_text(name, tag, sub, lines, foot, left, accent, screen=223):
@@ -903,7 +912,7 @@ def projects_card(downloads=None, now=None, only=None):
     """The projects as one card in four bands: the heading, then Cadran, Lift and LED Board. Each band is
     an image of its own so README.md can link it; api/cadran.py and api/lift.py serve theirs live (the
     download count, the clocks), the build writes the other two. The live bands come as (margin, live
-    part), see margin_and_rest. `only` draws just that band."""
+    part), see columns. `only` draws just that band."""
     pn = Panel(284, 32 + 3 * 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | title('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))
@@ -915,7 +924,7 @@ def projects_card(downloads=None, now=None, only=None):
         if only is None or i == only:
             alt, body, css = make(pn.at_row(tops[i]))
             band = dict(top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
-            out += margin_and_rest(pn, alt, body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
+            out += columns(pn, DEVICE_LIVE, [alt, alt, ''], body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
     return out
 
 
@@ -1002,8 +1011,9 @@ def cadran(pn, downloads=None, now=None):
         dock = slab(237, 33, 22, 4, 1, (226, 150, 170), (204, 128, 150))
         for i, colors in enumerate([('#4A9BFF',), ('#B63D60', '#E2522A'), ('#4CD964',), ('#FFB340',), ('#C8C8D0',)]):
             dock |= {(239 + i * 4 + c, 34 + r): colors[min(c * len(colors) // 3, len(colors) - 1)] for c in range(3) for r in range(2)}
-        return pn.draw(imac(CADRAN) | wall | menu | folders | dock) + clock, clock_css
-    link = 'CADRANAPP.COM ↗' + (f' · {downloads:,} DOWNLOADS' if downloads else '')
+        count = f'{downloads:,} DOWNLOADS' if downloads else ''  # under the iMac: live, so in the device's column
+        return pn.draw(imac(CADRAN) | wall | menu | folders | dock | text(count, 252 - text_width(count, '3x5') // 2, 57, CADRAN, '3x5')) + clock, clock_css
+    link = 'CADRANAPP.COM ↗'
     return project(pn, 'Cadran: clock faces rendered on your macOS wallpaper, on every Space and display. Featured on Product Hunt '
                    'and in awesome-mac. Built with SwiftUI, Core Animation and Next.js.'
                    + (f' Downloaded {downloads:,} times.' if downloads else ''),
@@ -1264,8 +1274,8 @@ def pet_card():
 
 
 def pet_panel(state=None, now=None):
-    """The live top of the pet card as (margin, live part), laid out like a project card: the pet, its copy
-    and a stats box. api/pet.py serves the live part; the buttons below it are static, see pet_controls."""
+    """The live top of the pet card as (margin, live part), see columns, laid out like a project card: the
+    pet, its copy and a stats box. api/pet.py serves the live part; the buttons below it are static, see pet_controls."""
     state, now = state or pet_state(), now or dt.datetime.now(dt.timezone.utc)
     last = state['last']
     awake = last and now - dt.datetime.fromisoformat(last['at']) <= dt.timedelta(days=2)
@@ -1331,7 +1341,7 @@ def pet_panel(state=None, now=None):
     summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
                f"played with {state['play']} times. {visit}")
     art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    return margin_and_rest(pn, summary, art_, css + prop_css, bottom=PET_CUT)
+    return columns(pn, [0], ['', summary], art_, css + prop_css, bottom=PET_CUT)
 
 
 def pet_button(i, pressed=False):
@@ -1502,12 +1512,14 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_margin, _, lift_margin, _, led_board = projects_card()
+    heading, cadran_copy, _, cadran_edge, lift_copy, _, lift_edge, led_board = projects_card()
     (OUT / 'projects-1.svg').write_text(heading)
-    (OUT / 'projects-2-margin.svg').write_text(cadran_margin)
-    (OUT / 'projects-3-margin.svg').write_text(lift_margin)
+    for name, svg in (('projects-2-copy', cadran_copy), ('projects-2-edge', cadran_edge), ('projects-3-copy', lift_copy), ('projects-3-edge', lift_edge)):
+        (OUT / f'{name}.svg').write_text(svg)
     (OUT / 'projects-4.svg').write_text(led_board)
-    (OUT / 'hero-margin.svg').write_text(hero()[0])
+    greeting, _, im, header = hero()
+    for name, svg in (('hero-greeting', greeting), ('hero-im', im), ('hero-body', header)):
+        (OUT / f'{name}.svg').write_text(svg)
     (OUT / 'pet-margin.svg').write_text(pet_panel()[0])
     controls = pet_controls()
     write('pet-actions', controls[:3])
