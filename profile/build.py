@@ -1252,15 +1252,15 @@ def slab(col, row, w, h, rad, top, bottom):
 
 
 def imac(color):
-    """An iMac in the app's colour, in its light: body 58x42 at (223, 3) with the chin under a 54x33 screen
-    at (225, 5), on a stand down to row 52."""
+    """An iMac in the app's colour, in its light: body 66x49 at (217, 3) with the chin under a 62x40 screen
+    at (219, 5), on a stand down to row 59."""
     tint, white, dark = rgb(color), (255, 255, 255), rgb(BG)
-    return (halo(223, 3, 58, 42, color, reach=3, rad=3, power=.3)
-            | slab(240, 51, 24, 2, 0, mix(tint, dark, .3), mix(tint, dark, .55))       # foot
-            | slab(246, 45, 12, 6, 0, mix(tint, dark, .4), mix(tint, dark, .6))        # neck
-            | slab(223, 3, 58, 42, 3, mix(tint, white, .55), mix(tint, dark, .25))     # body and chin
-            | slab(224, 4, 56, 35, 1, (24, 22, 26), (24, 22, 26))                      # black border round the screen
-            | {(250 + c, 40 + r): hexc(mix(tint, dark, .45)) for c, r in ((1, 0), (0, 1), (1, 1), (2, 1), (0, 2), (1, 2), (2, 2))})
+    return (halo(217, 3, 66, 49, color, reach=3, rad=3, power=.3)
+            | slab(238, 58, 24, 2, 0, mix(tint, dark, .3), mix(tint, dark, .55))       # foot
+            | slab(244, 52, 12, 6, 0, mix(tint, dark, .4), mix(tint, dark, .6))        # neck
+            | slab(217, 3, 66, 49, 3, mix(tint, white, .55), mix(tint, dark, .25))     # body and chin
+            | slab(218, 4, 64, 42, 1, (24, 22, 26), (24, 22, 26))                      # black border round the screen
+            | {(249 + c, 47 + r): hexc(mix(tint, dark, .45)) for c, r in ((1, 0), (0, 1), (1, 1), (2, 1), (0, 2), (1, 2), (2, 2))})
 
 
 def monitor(color):
@@ -1286,25 +1286,25 @@ def cadran(pn, downloads=None, now=None):
     accent, top, bottom, ink, dock_top, dock_bottom = CADRAN, (236, 124, 38), (196, 92, 18), (64, 30, 8), (246, 172, 112), (224, 146, 88)
 
     def demo(pn):
-        wall = {(225 + c, 5 + r): hexc(mix(top, bottom, r / 32)) for r in range(33) for c in range(54)}
+        wall = {(219 + c, 5 + r): hexc(mix(top, bottom, r / 39)) for r in range(40) for c in range(62)}
         ink_ = hexc(ink)  # Titan's dark digits, dark like the unlit LEDs between them
         titan = art_data()['titan']
-        tw = len(titan['0'][0])  # the cells touch: the glyphs' own margins are the gap, as on the face
-        clock, clock_css = ticking(pn, titan, {0: (229, 9), 1: (229 + tw, 9), 2: (229, 21), 3: (229 + tw, 21)},
+        tw, th = len(titan['0'][0]), len(titan['0'])  # the cells touch: the glyphs' own margins are the gap, as on the face
+        clock, clock_css = ticking(pn, titan, {0: (223, 9), 1: (223 + tw, 9), 2: (223, 11 + th), 3: (223 + tw, 11 + th)},
                                    now or dt.datetime.now(dt.timezone.utc), ink_, 'ti')  # hours over minutes, as Titan sets them
-        menu = ({(225 + c, 5 + r): hexc(mix(top, (255, 255, 255), .3)) for r in range(3) for c in range(54)}
-                | sprite(['.C.', 'CCC', 'CCC'], {'C': ink_}, 227, 5)  # the Apple menu, menus, status items
-                | {(c, 6): ink_ for a, b in ((232, 235), (238, 241), (244, 246), (266, 268), (271, 277)) for c in range(a, b + 1)})
-        folders = {(271 + c, top + r): '#6CB8F0' for top in (10, 17) for r in range(5) for c in range(6) if r or c < 3}
-        dock = slab(237, 33, 22, 4, 1, dock_top, dock_bottom)
+        menu = ({(219 + c, 5 + r): hexc(mix(top, (255, 255, 255), .3)) for r in range(3) for c in range(62)}
+                | sprite(['.C.', 'CCC', 'CCC'], {'C': ink_}, 221, 5)  # the Apple menu, menus, status items
+                | {(c, 6): ink_ for a, b in ((226, 229), (232, 235), (238, 240), (268, 270), (273, 279)) for c in range(a, b + 1)})
+        folders = {(273 + c, y + r): '#6CB8F0' for y in (10, 17) for r in range(5) for c in range(6) if r or c < 3}
+        dock = slab(239, 40, 22, 4, 1, dock_top, dock_bottom)  # under the minutes, clear of them
         for i, colors in enumerate([('#4A9BFF',), ('#B63D60', '#E2522A'), ('#4CD964',), ('#FFB340',), ('#C8C8D0',)]):
-            dock |= {(239 + i * 4 + c, 34 + r): colors[min(c * len(colors) // 3, len(colors) - 1)] for c in range(3) for r in range(2)}
+            dock |= {(241 + i * 4 + c, 41 + r): colors[min(c * len(colors) // 3, len(colors) - 1)] for c in range(3) for r in range(2)}
         count = {}  # under the iMac: live, so in the device's column
         if downloads:
             label = f'{downloads:,} DOWNLOADS'
             w = 7 + text_width(label, '3x5')
-            x = min(252 - w // 2, 284 - w)  # centred under the iMac, but inside the card
-            count = sprite(STAT_ICONS['download'], {'C': CADRAN}, x, 57) | text(label, x + 7, 57, CADRAN, '3x5')
+            x = min(250 - w // 2, 284 - w)  # centred under the iMac, but inside the card
+            count = sprite(STAT_ICONS['download'], {'C': CADRAN}, x, 64) | text(label, x + 7, 64, CADRAN, '3x5')
         return pn.draw(imac(accent) | wall | menu | folders | dock | count) + clock, clock_css
     link = 'CADRANAPP.COM ↗'
     return project(pn, 'Cadran: clock faces rendered on your macOS wallpaper, on every Space and display. Featured on Product Hunt '
@@ -2184,8 +2184,8 @@ def import_titles(font, cap=14, ss=8, levels=1, sf='/System/Library/Fonts/SFNS.t
     counter = {d: rows(d, f, 9)[1:10] for d in '0123456789-'}
     w = max(len(g[0]) for g in counter.values())  # one width for all, so a reel can swap them in place
     sets['counter'] = {d: ['0' * ((w - len(g[0])) // 2) + ln + '0' * (w - len(g[0]) - (w - len(g[0])) // 2) for ln in g] for d, g in counter.items()}
-    f = face(11, 200, sf, [150, 28, 400, 200])  # SF: width 150 (expanded), optical size, grade, weight 200 (thin)
-    titan = {d: rows(d, f, 11)[1:12] for d in '0123456789'}
+    f = face(14, 200, sf, [150, 28, 400, 200])  # SF: width 150 (expanded), optical size, grade, weight 200 (thin); at 14 LEDs
+    titan = {d: rows(d, f, 14)[1:15] for d in '0123456789'}  # tall every stroke stays whole (at 11, curves lost dots)
     w = max(len(g[0]) for g in titan.values())  # one width for all, so a reel can swap them in place
     sets['titan'] = {d: ['0' * ((w - len(g[0])) // 2) + ln + '0' * (w - len(g[0]) - (w - len(g[0])) // 2) for ln in g] for d, g in titan.items()}
     save_art(titles=titles, **sets)
