@@ -451,8 +451,7 @@ def outline(col, row, size, color, radius=.22):
 
 # --- titles: pre-rendered by `build.py titles` so CI needs neither Pillow nor the font ----
 
-TITLE_CAPS = {'MY PROJECTS': 8}  # section headings sit a size below the names (cap height 14)
-TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'MY PROJECTS', 'GITHUB']
+TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'GITHUB']
 
 
 def big(s, col, row, color, gap=2, size='counter'):
@@ -1099,7 +1098,7 @@ def projects_card(downloads=None, now=None, only=None):
     part), see columns. `only` draws just that band."""
     pn = Panel(284, 32 + 3 * 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
-               | title('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))
+               | text('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
     makers = [lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''),
               lambda b: cadran(b, downloads, now), lambda b: lift(b, None, now), lambda b: board(b)]
     tops = [0, 32, 108, 184, 260]
@@ -2000,8 +1999,7 @@ def import_titles(font, cap=14, ss=8, levels=1, sf='/System/Library/Fonts/SFNS.t
         return [''.join(str(int(im.getpixel((x, y)) >= 128)) for x in range(im.size[0])) for y in range(im.size[1])]
     titles = {}
     for s in TITLES:
-        size = TITLE_CAPS.get(s, cap)
-        r = rows(s, face(size, 800), size)  # ExtraBold
+        r = rows(s, face(cap, 800), cap)  # ExtraBold
         titles[s] = {'w': len(r[0]), 'top': 1, 'levels': levels, 'rows': r}
     sets = {}
     f = face(9, 600, sf, [100, 28, 400, 600])  # the counter: SF semibold, whose zero is plain (JetBrains Mono's dot reads as a bar here)
