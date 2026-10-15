@@ -228,10 +228,11 @@ def polar(center, r, deg):
     return round(center[0] + r * math.sin(a)), round(center[1] - r * math.cos(a))
 
 
-# The LEDs' glow: (filter id suffix, blur radius in LED pitches, the image's display scale at or below which it applies).
-# A fixed radius blurs the panels on a phone, where an LED is barely a pixel; media queries inside an <img>'s SVG
-# see the size it is shown at, so each image switches by its own scale: slices and full bands stay alike.
-BLOOM = (('', .6, None), ('-m', .4, .75), ('-s', .22, .5))
+# The LEDs' glow is a blur over the lit dots. WebKit (Safari, and the GitHub app's web view) works SVG filters out on a
+# low-resolution buffer, which turns a phone-sized panel to mush whatever the blur's radius. Media queries inside an
+# <img>'s SVG see the size it is shown at, so below SHARP_BELOW of its natural width an image drops the glow and lights
+# larger dots instead; each image switches by its own scale, so slices and full bands stay alike.
+SHARP_BELOW = .6
 
 
 @functools.lru_cache(maxsize=16)
@@ -299,26 +300,28 @@ class Panel:
 
     def svg(self, title, body, style='', defs='', view=None):
         """`view=(x, y, width, height)` crops the panel, see `slices`."""
-        p, dot = self.p, self.p * .72
+        p = self.p
         vx, vy, vw, vh = view or (0, 0, self.width, self.height)
-        inset = (p - dot) / 2
         area, card = self.box(0, 0, self.cols, self.rows), f'width="{self.width}" height="{num(self.height)}"'
         shape, ring = self.edge()
-        dots = (f'width="{num(p)}" height="{num(p)}" patternUnits="userSpaceOnUse" x="{num(self.x)}" y="{num(self.y)}"'
-                f'><rect x="{num(inset)}" y="{num(inset)}" width="{num(dot)}" height="{num(dot)}" rx="{num(dot * .3)}"')
+
+        def dots(pid, share, fill):  # one LED per pitch, `share` of it lit
+            d = p * share
+            return (f'<pattern id="{pid}" width="{num(p)}" height="{num(p)}" patternUnits="userSpaceOnUse" x="{num(self.x)}" y="{num(self.y)}">'
+                    f'<rect x="{num((p - d) / 2)}" y="{num((p - d) / 2)}" width="{num(d)}" height="{num(d)}" rx="{num(d * .3)}" fill="{fill}"/></pattern>')
         return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{num(vx)} {num(vy)} {num(vw)} {num(vh)}" '
                 f'width="{num(vw)}" height="{num(vh)}" role="img" aria-label="{title}"><title>{title}</title>'
-                f'<defs><pattern id="dot" {dots} fill="#fff"/></pattern><pattern id="off" {dots} fill="{OFF}"/></pattern>'
+                f'<defs>{dots("dot", .72, "#fff")}{dots("off", .72, OFF)}{dots("dot-m", .86, "#fff")}'
                 f'<mask id="leds" maskUnits="userSpaceOnUse" x="0" y="0" {card}><rect {card} fill="url(#dot)"/></mask>'
+                f'<mask id="leds-m" maskUnits="userSpaceOnUse" x="0" y="0" {card}><rect {card} fill="url(#dot-m)"/></mask>'
                 f'<clipPath id="screen"><rect {area}/></clipPath>'
-                + ''.join(f'<filter id="bloom{k}" x="-3%" y="-3%" width="106%" height="106%"><feGaussianBlur stdDeviation="{num(p * r)}" result="b"/>'
-                          f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' for k, r, _ in BLOOM)
-                + f'{defs}</defs><style>{style}'
-                + ''.join(f'@media (max-width:{num(vw * at)}px){{.lit{{filter:url(#bloom{k})}}}}' for k, _, at in BLOOM[1:])
-                + f'@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}</style>'
+                f'<filter id="bloom" x="-3%" y="-3%" width="106%" height="106%"><feGaussianBlur stdDeviation="{num(p * .6)}" result="b"/>'
+                f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>{defs}</defs><style>{style}'
+                f'@media (max-width:{num(vw * SHARP_BELOW)}px){{.lit{{filter:none}}.dots{{mask:url(#leds-m)}}}}'
+                f'@media (prefers-reduced-motion:reduce){{*{{animation:none!important}}}}</style>'
                 f'<path d="{shape}" fill="#0B0907"/><rect {area} fill="{BG}"/><rect {area} fill="url(#off)"/>'
-                f'<g class="lit" filter="url(#bloom)"><g mask="url(#leds)">{self.draw(ring)}</g>'
-                f'<g mask="url(#leds)" clip-path="url(#screen)">{body}</g></g></svg>')
+                f'<g class="lit" filter="url(#bloom)"><g class="dots" mask="url(#leds)">{self.draw(ring)}</g>'
+                f'<g class="dots" mask="url(#leds)" clip-path="url(#screen)">{body}</g></g></svg>')
 
 
 def slices(pn, titles, body, style='', defs='', top=None, bottom=None, indices=None):
