@@ -1154,13 +1154,12 @@ def hero(n=None):
             + columns(pn, [], [still], body, style, defs, top=HERO_BAND))
 
 
-def card_text(name, tag, sub, lines, foot, left, accent, screen=223, copy=36):
+def card_text(name, tag, sub, lines, foot, left, accent, copy=36):
     """Title and framed tag, a line in the accent right under it, three lines of copy from row `copy`, then an
-    optional footer in the accent. With `screen`, also the bezel of a screen on the right, whose contents (from
-    that column, rows 4-51) are the caller's; the project cards draw a device there instead."""
+    optional footer in the accent: the left part of a card, whose right part (from column 220) is the caller's."""
     name_w, tag_w = title_width(name), text_width(tag, '3x5')
     assert left + max([name_w + 12 + tag_w, *(text_width(t, '3x5') for t in [sub, *lines, foot or ''])]) < 220, name
-    cells = ({} if screen is None else bezel(screen, 4, 57, 48, accent)) | title(name, left, 6, accent) | text(tag, left + name_w + 8, 10, MUTED, '3x5')
+    cells = title(name, left, 6, accent) | text(tag, left + name_w + 8, 10, MUTED, '3x5')
     cells |= frame(left + name_w + 5, 7, left + name_w + 10 + tag_w, 16, RULE) | text(sub, left, 23, accent, '3x5')
     for i, ln in enumerate(lines):
         cells |= text(ln, left, copy + i * 8, CREAM, '3x5')
@@ -1171,7 +1170,7 @@ def project(pn, alt, name, tag, lines, tech, cta, accent, icon, demo):
     """One band of the projects card, 76 rows on `pn`: a 24-LED icon level with the title's top, then name,
     link, description and stack from column 40; on the right (columns 220-283) `demo` draws the app running
     on its device. Returns (alt, body, css)."""
-    cells = halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent) | card_text(name, tag, cta, lines, tech, 40, accent, None)
+    cells = halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent) | card_text(name, tag, cta, lines, tech, 40, accent)
     body, css = demo(pn.at_row(3))  # the device 3 rows down, so its light stays clear of the rule above
     return alt, pn.draw(cells | {(c, 0): RULE for c in range(0, pn.cols, 2)}) + body, css  # a dotted rule over each project
 
@@ -1508,7 +1507,7 @@ def github():
     pn = Panel(284, bottom + 5)
     sub, right = f"{g['contributions']:,} CONTRIBUTIONS IN 12 MONTHS", 186  # the counts' box starts at `right`
     assert 40 + text_width(sub, '3x5') < right - 3, 'the contributions line runs into the counts'
-    cells = tile('github', 6, 6, GH) | card_text('GITHUB', f'@{GITHUB_USER.upper()}', sub, [], None, 40, GH, None)
+    cells = tile('github', 6, 6, GH) | card_text('GITHUB', f'@{GITHUB_USER.upper()}', sub, [], None, 40, GH)
     shade = [RULE] + [hexc(mix(rgb(BG), rgb(GH), t)) for t in (.3, .5, .75, 1)]
     for w, days in enumerate(g['weeks']):  # a week per column, Sunday on top; the first week may start mid-week
         top = 7 - len(days) if w == 0 else 0
@@ -2004,17 +2003,17 @@ def pet_panel(state=None, now=None):
         did = f'HAS {verb} · {when}'
         said = [(head + place).rstrip(), did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
     info = card_text(name, f"PROFILE {pet['noun']}", '', ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
-                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], screen=229,
-                     copy=37)  # a row lower, under the sentence
+                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], copy=37)  # a row lower, under the sentence
     for i, ln in enumerate(said):  # in the accent like card_text's line, a row higher so two fit
         info |= text(ln, left, 22 + 7 * i, pet['accent'], '3x5')
     if flag_:
         x = left + text_width(said[0], '3x5') + text_width(' ', '3x5') + 2
         info |= {(x + c, 22 + r): v for (c, r), v in flag_.items()}
     mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
-    info |= text('MOOD', 232, 7, MUTED, '3x5') | text(mood, 283, 7, mood_color, '3x5', anchor='end') | hline(229, 285, 14, RULE)
+    info |= bezel(226, 4, 62, 50, pet['accent'])  # the stats box: rows 4-53, as tall as the scene allows (PET_CUT)
+    info |= text('MOOD', 231, 8, MUTED, '3x5') | text(mood, 283, 8, mood_color, '3x5', anchor='end') | hline(226, 287, 16, RULE)
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):  # the totals, spread over the rest of the screen
-        info |= text(done, 232, 21 + i * 11, color, '3x5') | text(str(min(state[key], 9999)), 283, 19 + i * 11, CREAM, anchor='end')
+        info |= text(done, 231, 23 + i * 11, color, '3x5') | text(str(min(state[key], 9999)), 283, 21 + i * 11, CREAM, anchor='end')
     Name = name.capitalize()
     visit = (f"Last visit: someone from {last['where'].title()} {verb.lower().replace(name.lower(), Name)}, {when.lower()}."
              if last else 'No visits yet.')
