@@ -10,4 +10,4 @@ import build  # noqa: E402
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        send(self, build.projects_card(only=2)[0].encode(), headers=[SVG])
+        send(self, build.projects_card(only=2)[1].encode(), headers=[SVG])

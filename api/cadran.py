@@ -12,4 +12,4 @@ import build  # noqa: E402
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         n = (redis(['GET', 'download_clicks']) or [None])[0]
-        send(self, build.projects_card(int(n) if str(n).isdigit() else None, only=1)[0].encode(), headers=[SVG])
+        send(self, build.projects_card(int(n) if str(n).isdigit() else None, only=1)[1].encode(), headers=[SVG])

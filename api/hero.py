@@ -11,4 +11,4 @@ import build  # noqa: E402
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         n = (redis(['INCR', 'profile-visits']) or [None])[0]
-        send(self, build.hero(n if isinstance(n, int) else None).encode(), headers=[SVG])
+        send(self, build.hero(n if isinstance(n, int) else None)[1].encode(), headers=[SVG])

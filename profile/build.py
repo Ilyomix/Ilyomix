@@ -325,6 +325,15 @@ def slices(pn, titles, body, style='', defs='', top=None, bottom=None, indices=N
     return [pn.svg(titles[i], body, style, defs, view=(i * w, y0, w, y1 - y0)) for i in indices]
 
 
+def margin_and_rest(pn, alt, body, style='', defs='', top=None, bottom=None):
+    """A live band as two images: the card's left margin (frame only, no LEDs), which the build writes, and
+    the rest, which api/ draws on each view. README.md puts them on one line: the margin comes with the
+    other static files and holds the band's height, so when the live part lands nothing below it moves."""
+    y0 = 0 if top is None else pn.y + top * pn.p
+    y1 = pn.height if bottom is None else pn.y + bottom * pn.p
+    return pn.svg('', '', view=(0, y0, pn.x, y1 - y0)), pn.svg(alt, body, style, defs, view=(pn.x, y0, pn.width - pn.x, y1 - y0))
+
+
 SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED panel, 6 LEDs clear of the cuts
 
 
@@ -710,6 +719,7 @@ ICONS = {  # 9x9 button icons
     'ball': ['...CCC...', '..LLCCC..', '.CLCCCCC.', '.CCCCCCC.', '.CCCCCCC.', '..CCCCC..', '...CCC...'],
     'bone': ['.C.....C.', 'CCC...CCC', 'CCCCCCCCC', '.CLLLLLC.', 'CCCCCCCCC', 'CCC...CCC', '.C.....C.'],
     'carrot': ['......L.L', '.....CLL.', '....CCCC.', '...CCCC..', '..CCCC...', '.CCC.....', 'CC.......'],
+    'bowl': ['.........', '..L.L.L..', '.LLLLLLL.', '.........', 'CCCCCCCCC', 'CCCCCCCCC', '.CCCCCCC.', '..CCCCC..', '.........'],
     'reload': ['..CCC.C', '.C...CC', 'C...CCC', 'C......', 'C.....C', '.C...C.', '..CCC..'],  # 7x7: the click reloads the page
 }
 
@@ -792,7 +802,8 @@ def years():
 
 
 def hero(n=None):
-    """The header, served live by api/hero.py: n is the visitor number (None when the count is unavailable)."""
+    """The header as (margin, live part), see margin_and_rest; api/hero.py serves the live part. n is the
+    visitor number (None when the count is unavailable)."""
     pn = Panel(284, 101)  # rows: border 0, counter housing 5-23, photo and text 28-79, rule 84, ticker 89-95, border 100: 4 clear rows between each
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
@@ -836,7 +847,7 @@ def hero(n=None):
     alt = (f'Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. '
            f'{years()}+ years of product interfaces, design systems and native apps for the Mac and iPhone.'
            + ('' if n is None else f' Hello, visitor number {n}!'))  # the alt keeps the greeting short
-    return pn.svg(alt, body, style, defs)
+    return margin_and_rest(pn, alt, body, style, defs)
 
 
 def card_text(name, tag, sub, lines, foot, left, accent, screen=223):
@@ -883,7 +894,8 @@ def projects_mark(col, row, size=16):
 def projects_card(downloads=None, now=None, only=None):
     """The projects as one card in four bands: the heading, then Cadran, Lift and LED Board. Each band is
     an image of its own so README.md can link it; api/cadran.py and api/lift.py serve theirs live (the
-    download count, the clocks), the build writes the other two. `only` draws just that band."""
+    download count, the clocks), the build writes the other two. The live bands come as (margin, live
+    part), see margin_and_rest. `only` draws just that band."""
     pn = Panel(284, 32 + 3 * 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | title('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))
@@ -894,7 +906,8 @@ def projects_card(downloads=None, now=None, only=None):
     for i, make in enumerate(makers):
         if only is None or i == only:
             alt, body, css = make(pn.at_row(tops[i]))
-            out += slices(pn, [alt], body, css, top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
+            band = dict(top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
+            out += margin_and_rest(pn, alt, body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
     return out
 
 
@@ -1233,17 +1246,24 @@ def visit_verb(last):
     return {'feed': f'FED {name}', 'pet': f'PETTED {name}', 'play': f'PLAYED WITH {name}', 'choose': f'PICKED {name}'}[last['action']]
 
 
-def pet_panel(state=None, now=None, part=None):
-    """Laid out like a project card (pet, copy, stats box), then Feed, Pet and Play as buttons, one per
-    third, and a switch with every pet's head, one per fifth: api/pet.py serves the eight slices, and
-    README.md links each to api/act.py. 900 px is the width that splits into both thirds and fifths on
-    LED boundaries (cuts at x = 300, 600 and every 180)."""
+PET_CUT = 58  # the LED row where the live scene ends and the controls start
+
+
+def pet_card():
+    """The pet card's frame: 900 px is the width that splits into both thirds and fifths on LED
+    boundaries (cuts at x = 300, 600 and every 180)."""
+    return Panel(290, 106, width=900)
+
+
+def pet_panel(state=None, now=None):
+    """The live top of the pet card as (margin, live part), laid out like a project card: the pet, its copy
+    and a stats box. api/pet.py serves the live part; the buttons below it are static, see pet_controls."""
     state, now = state or pet_state(), now or dt.datetime.now(dt.timezone.utc)
     last = state['last']
     awake = last and now - dt.datetime.fromisoformat(last['at']) <= dt.timedelta(days=2)
     kind = state['chosen'] if state['chosen'] in PETS else 'cat'
     pet, name = PETS[kind], PETS[kind]['name']
-    pn = Panel(290, 106, width=900)
+    pn = pet_card()
     cx, cy, left = 6, 6, 76  # the pet, 52x48 LEDs, level with the title like the icons; its props play in columns 46-72
     poses = [scale2x(compose(pet['body'], layer(f))) for f in pet['frames']]  # whole poses: only one shows at a time
     closed = scale2x(compose(pet['body'], layer(pet['frames'][0]), layer(pet['shut'])))
@@ -1297,39 +1317,59 @@ def pet_panel(state=None, now=None, part=None):
     info |= hline(229, 285, 44, RULE) | sprite(['CCC', 'C.C', 'CCC', '.C.', '.C.'], {'C': PET}, 232, 47) | text(place, 283, 47, CREAM, '3x5', anchor='end')
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):
         info |= text(done, 232, 19 + i * 9, color, '3x5') | text(str(min(state[key], 9999)), 283, 17 + i * 9, CREAM, anchor='end')
-        a, b = [(6, 88), (101, 188), (201, 286)][i]  # the button, 6 LEDs clear of the cuts: dim fill, brighter edge
-        info |= {(c, r): hexc(mix(rgb(BG), rgb(color), .5 if c in (a, b) or r in (64, 78) else .14))
-                 for c in range(a, b + 1) for r in range(64, 79) if not (c in (a, b) and r in (64, 78))}
-        x = a + (b - a + 1 - (15 + text_width(label))) // 2
-        shine = hexc(mix(rgb(color), (255, 255, 255), .6))
-        info |= sprite(ICONS[icon or pet['food']], {'C': color, 'L': shine}, x, 68) | text(label, x + 15, 68, CREAM)
-        info |= sprite(ICONS['reload'], {'C': color}, b - 9, 68)  # at the button's end, like the links' arrows: this click reloads
     Name = name.capitalize()
     visit = (f"Last visit: someone from {last['where'].title()} {verb.lower().replace(name.lower(), Name)}, {when.lower()}."
              if last else 'No visits yet.')
     summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
                f"played with {state['play']} times. {visit}")
-    alts = [f'{summary} Feed {Name}: the page reloads and {Name} eats.',
-            f'Pet {Name}: the page reloads and {Name} purrs.',
-            f'Play with {Name}: the page reloads and {Name} plays.']
-    picks = []
-    for i, (k, other) in enumerate(PETS.items()):  # the switch: each head in its fifth, the one on stage lit
-        c, on, h = 24 + 60 * i, k == kind, other['head']  # c: the fifth's centre LED
-        info |= {(x, r): hexc(mix(rgb(BG), rgb(PET if on else MUTED), (.6 if on else .18) if x in (c - 20, c + 20) or r in (84, 102) else (.14 if on else .03)))
-                 for x in range(c - 20, c + 21) for r in range(84, 103) if not (x in (c - 20, c + 20) and r in (84, 102))}
-        colors = other['colors'] if on else {key: hexc(mix(rgb(BG), rgb(v), .6)) for key, v in other['colors'].items()}
-        for rows in (other['body'], layer(other['frames'][0])):  # the head and its first pose, cropped to the head
-            info |= sprite([ln[:18] for ln in rows[:h]], colors, c - 9, 101 - h)
-        n = other['name'].capitalize()
-        picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n} on stage." + (' On stage now.' if on else ''))
     art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    if part is None:
-        return slices(pn, alts, art_, css + prop_css, bottom=81) + slices(pn, picks, art_, css + prop_css, top=81)
-    if 0 <= part < len(alts):
-        return slices(pn, alts, art_, css + prop_css, bottom=81, indices=(part,))[0]
-    if len(alts) <= part < len(alts) + len(picks):
-        return slices(pn, picks, art_, css + prop_css, top=81, indices=(part - len(alts),))[0]
-    raise ValueError('pet slice index must be between 0 and 7')
+    return margin_and_rest(pn, summary, art_, css + prop_css, bottom=PET_CUT)
+
+
+def pet_button(i):
+    """Feed, Pet or Play (ACTIONS[i]) in its third of the pet card, 6 LEDs clear of the cuts: dim fill,
+    brighter edge."""
+    key, label, done, icon, color = ACTIONS[i]
+    a, b = [(6, 88), (101, 188), (201, 286)][i]
+    top, fill, edge = 64, .14, .5
+    cells = {(c, r): hexc(mix(rgb(BG), rgb(color), edge if c in (a, b) or r in (top, top + 14) else fill))
+             for c in range(a, b + 1) for r in range(top, top + 15) if not (c in (a, b) and r in (top, top + 14))}
+    x = a + (b - a + 1 - (15 + text_width(label))) // 2
+    shine = hexc(mix(rgb(color), (255, 255, 255), .6))
+    cells |= sprite(ICONS[icon or 'bowl'], {'C': color, 'L': shine}, x, top + 4) | text(label, x + 15, top + 4, CREAM)
+    return cells | sprite(ICONS['reload'], {'C': color}, b - 9, top + 4)  # at the button's end, like the links' arrows: this click reloads
+
+
+def pet_head(i):
+    """The switch's tile for the i-th pet in its fifth of the pet card: the head and its first pose, cropped
+    to the head."""
+    other = PETS[list(PETS)[i]]
+    c, h = 24 + 60 * i, other['head']  # c: the fifth's centre LED
+    tone, edge, fill = MUTED, .35, .03
+    cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - 20, c + 20) or r in (84, 102) else fill))
+             for x in range(c - 20, c + 21) for r in range(84, 103) if not (x in (c - 20, c + 20) and r in (84, 102))}
+    for rows in (other['body'], layer(other['frames'][0])):
+        cells |= sprite([ln[:18] for ln in rows[:h]], other['colors'], c - 9, 101 - h)
+    return cells
+
+
+def pet_controls():
+    """The bottom of the pet card: Feed, Pet and Play, one per third, then the switch with every pet's
+    head, one per fifth. They look the same for every visitor, so build_all writes them to the repo
+    and they load with the other static panels: only the scene above them waits for api/pet.py.
+    README.md links each slice to api/act.py."""
+    pn, info = pet_card(), {}
+    for i in range(len(ACTIONS)):
+        info |= pet_button(i)
+    alts = ['Feed the profile pet: the page reloads and it eats.', 'Pet it: the page reloads and it purrs.',
+            'Play with it: the page reloads and it plays.']
+    picks = []
+    for i, (k, other) in enumerate(PETS.items()):  # the switch: each head in its fifth
+        info |= pet_head(i)
+        n = other['name'].capitalize()
+        picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n} on stage.")
+    body = pn.draw(info)
+    return slices(pn, alts, body, top=PET_CUT, bottom=81) + slices(pn, picks, body, top=81)
 
 
 def drums(pn, n, col, row, count=7, w=11, h=15, gap=2):
@@ -1422,9 +1462,16 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, *_, led_board = projects_card()
+    heading, cadran_margin, _, lift_margin, _, led_board = projects_card()
     (OUT / 'projects-1.svg').write_text(heading)
+    (OUT / 'projects-2-margin.svg').write_text(cadran_margin)
+    (OUT / 'projects-3-margin.svg').write_text(lift_margin)
     (OUT / 'projects-4.svg').write_text(led_board)
+    (OUT / 'hero-margin.svg').write_text(hero()[0])
+    (OUT / 'pet-margin.svg').write_text(pet_panel()[0])
+    controls = pet_controls()
+    write('pet-actions', controls[:3])
+    write('pet-switch', controls[3:])
     for make in (lambda: hero(1), pet_panel):  # served live by api/, drawn here for the contrast check
         make()
     low = {c: round(contrast(c, BG), 2) for c in INK if contrast(c, BG) < 4.5}
