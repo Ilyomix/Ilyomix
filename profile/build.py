@@ -235,21 +235,20 @@ BLOOM = (('', .6, None), ('-m', .4, .75), ('-s', .22, .5))
 
 @functools.lru_cache(maxsize=16)
 def card_edge(p, x, width, height, corner):
-    """Panel.edge for one card size. It depends on the geometry alone and was most of a live render's
-    time (api/ draws on every view), so each warm instance works it out once."""
+    """Panel.edge for one card size, cached: it depends on the geometry alone. Each row of the card is one
+    span of cells, so a cell is on the ring when it ends its span or the row above or below doesn't cover
+    it: worked out row by row, since a cold instance on Vercel pays for it on its first view."""
     m = round(x / p)
     gw, gh = round(width / p), round(height / p)
-
-    def cut(gy):
-        k = min(gy, gh - 1 - gy)
-        return corner[k] if k < len(corner) else 0
-
-    def inside(gx, gy):
-        return 0 <= gy < gh and cut(gy) <= gx < gw - cut(gy)
-    shape = ''.join(f'M{num(cut(gy) * p)} {num(gy * p)}h{num((gw - 2 * cut(gy)) * p)}v{num(p)}h{num(-(gw - 2 * cut(gy)) * p)}Z'
-                    for gy in range(gh))
-    ring = {(gx - m, gy - m): RULE for gy in range(gh) for gx in range(gw) if inside(gx, gy)
-            and not all(inside(gx + i, gy + j) for i, j in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+    cuts = [corner[min(gy, gh - 1 - gy)] if min(gy, gh - 1 - gy) < len(corner) else 0 for gy in range(gh)]
+    shape = ''.join(f'M{num(c * p)} {num(gy * p)}h{num((gw - 2 * c) * p)}v{num(p)}h{num(-(gw - 2 * c) * p)}Z'
+                    for gy, c in enumerate(cuts))
+    ring = {}
+    for gy, c in enumerate(cuts):
+        up, down = (cuts[gy - 1] if gy else gw), (cuts[gy + 1] if gy < gh - 1 else gw)  # gw: no row there
+        for gx in range(c, gw - c):
+            if gx in (c, gw - c - 1) or not (up <= gx < gw - up and down <= gx < gw - down):
+                ring[(gx - m, gy - m)] = RULE
     return shape, ring
 
 
@@ -390,9 +389,15 @@ def ticker(segments, row, gap=6):
 
 # --- pixel art --------------------------------------------------------------------------
 
+@functools.cache
+def art_data():
+    """art.json, read once per process: titles, glyphs and pixel art are looked up on every render."""
+    return json.loads((OUT / 'art.json').read_text())
+
+
 def art(name, col, row, radius=.2):
     """Imported pixel art (art.json) with rounded corners."""
-    a = json.loads((OUT / 'art.json').read_text())[name]
+    a = art_data()[name]
     w, h = a['w'], a['h']
     return {(col + c, row + r): a['palette'][int(k, 36)]
             for r, line_ in enumerate(a['rows']) for c, k in enumerate(line_)
@@ -455,7 +460,7 @@ TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'N
 
 def big(s, col, row, color, gap=2, size='counter'):
     """Pre-rendered digits at one LED per pixel, like the titles: the counter's by default. `row` is the top."""
-    glyphs = json.loads((OUT / 'art.json').read_text())[size]
+    glyphs = art_data()[size]
     INK.add(color)
     cells = {}
     for ch in s:
@@ -466,12 +471,12 @@ def big(s, col, row, color, gap=2, size='counter'):
 
 
 def title_width(s):
-    return json.loads((OUT / 'art.json').read_text())['titles'][s]['w']
+    return art_data()['titles'][s]['w']
 
 
 def title(s, col, row, color, decor=False):
     """Title in JetBrains Mono at one LED per pixel. `row` is the cap top."""
-    t = json.loads((OUT / 'art.json').read_text())['titles'][s]
+    t = art_data()['titles'][s]
     if not decor:
         INK.add(color)
     return {(col + c, row - t['top'] + r): hexc(mix(rgb(BG), rgb(color), int(k) / t['levels']))
@@ -1000,7 +1005,7 @@ def cadran(pn, downloads=None, now=None):
     def demo(pn):
         wall = {(225 + c, 5 + r): hexc(mix((205, 98, 124), (176, 82, 106), r / 32)) for r in range(33) for c in range(54)}
         ink = hexc((70, 30, 42))  # Titan's maroon digits, dark like the unlit LEDs between them
-        titan = json.loads((OUT / 'art.json').read_text())['titan']
+        titan = art_data()['titan']
         tw = len(titan['0'][0])  # the cells touch: the glyphs' own margins are the gap, as on the face
         clock, clock_css = ticking(pn, titan, {0: (229, 9), 1: (229 + tw, 9), 2: (229, 21), 3: (229 + tw, 21)},
                                    now or dt.datetime.now(dt.timezone.utc), ink, 'ti')  # hours over minutes, as Titan sets them
@@ -1428,7 +1433,7 @@ def drums(pn, n, col, row, count=7, w=11, h=15, gap=2):
     new = '-' * count if n is None else f'{n % 10 ** count:0{count}d}'
     old = new if n is None else f'{(n - 1) % 10 ** count:0{count}d}'
     cells, reels = {}, ''
-    glyph_w = len(json.loads((OUT / 'art.json').read_text())['counter']['0'][0])
+    glyph_w = len(art_data()['counter']['0'][0])
     for i, (a, b) in enumerate(zip(old, new)):
         x = col + i * (w + gap)
         tone = RED if i == count - 1 else CREAM
