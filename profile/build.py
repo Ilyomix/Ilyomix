@@ -1620,13 +1620,13 @@ def visit_verb(last):
     return {'feed': f'FED {name}', 'pet': f'PETTED {name}', 'play': f'PLAYED WITH {name}', 'choose': f'PICKED {name}'}[last['action']]
 
 
-PET_CUT = 58  # the LED row where the live scene ends and the controls start
+PET_CUT = 64  # the LED row where the live scene ends and the controls start
 
 
 def pet_card():
     """The pet card's frame: 900 px is the width that splits into both thirds and fifths on LED
     boundaries (cuts at x = 300, 600 and every 180)."""
-    return Panel(290, 106, width=900)
+    return Panel(290, 112, width=900)
 
 
 POSES = {'rest': (0, 0), 'in': (1, 0), 'crouch': (-3, 2), 'stretch': (2, -2), 'land': (-4, 4)}  # (rise, widen), see `bent`
@@ -2003,17 +2003,17 @@ def pet_panel(state=None, now=None):
         did = f'HAS {verb} · {when}'
         said = [(head + place).rstrip(), did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
     info = card_text(name, f"PROFILE {pet['noun']}", '', ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
-                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], copy=37)  # a row lower, under the sentence
-    for i, ln in enumerate(said):  # in the accent like card_text's line, a row higher so two fit
-        info |= text(ln, left, 22 + 7 * i, pet['accent'], '3x5')
+                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], copy=43)  # eight clear rows under the sentence, as on the project cards
+    for i, ln in enumerate(said):  # in the accent from row 23, like card_text's line
+        info |= text(ln, left, 23 + 7 * i, pet['accent'], '3x5')
     if flag_:
         x = left + text_width(said[0], '3x5') + text_width(' ', '3x5') + 2
-        info |= {(x + c, 22 + r): v for (c, r), v in flag_.items()}
+        info |= {(x + c, 23 + r): v for (c, r), v in flag_.items()}
     mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
-    info |= bezel(226, 4, 62, 50, pet['accent'])  # the stats box: rows 4-53, as tall as the scene allows (PET_CUT)
+    info |= bezel(226, 4, 62, 56, pet['accent'])  # the stats box: rows 4-59, as tall as the scene allows (PET_CUT)
     info |= text('MOOD', 231, 8, MUTED, '3x5') | text(mood, 283, 8, mood_color, '3x5', anchor='end') | hline(226, 287, 16, RULE)
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):  # the totals, spread over the rest of the screen
-        info |= text(done, 231, 23 + i * 11, color, '3x5') | text(str(min(state[key], 9999)), 283, 21 + i * 11, CREAM, anchor='end')
+        info |= text(done, 231, 25 + i * 13, color, '3x5') | text(str(min(state[key], 9999)), 283, 23 + i * 13, CREAM, anchor='end')
     Name = name.capitalize()
     visit = (f"Last visit: someone from {last['where'].title()} {verb.lower().replace(name.lower(), Name)}, {when.lower()}."
              if last else 'No visits yet.')
@@ -2028,7 +2028,7 @@ def pet_button(i, pressed=False):
     brighter edge. Pressed, it sinks a LED and lights up: api/act.py shows that as the click."""
     key, label, done, icon, color = ACTIONS[i]
     a, b = [(6, 88), (101, 188), (201, 286)][i]
-    top = 65 if pressed else 64
+    top = 71 if pressed else 70
     fill, edge = (.36, 1) if pressed else (.14, .5)
     cells = {(c, r): hexc(mix(rgb(BG), rgb(color), edge if c in (a, b) or r in (top, top + 14) else fill))
              for c in range(a, b + 1) for r in range(top, top + 15) if not (c in (a, b) and r in (top, top + 14))}
@@ -2052,13 +2052,13 @@ def pet_head(i, pressed=False):
     other = PETS[list(PETS)[i]]
     (c, half), h = head_tile(i), other['tile']
     tone, edge, fill = (PET, .7, .16) if pressed else (MUTED, .35, .03)
-    cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - half, c + half) or r in (84, 102) else fill))
-             for x in range(c - half, c + half + 1) for r in range(84, 103) if not (x in (c - half, c + half) and r in (84, 102))}
+    cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - half, c + half) or r in (90, 108) else fill))
+             for x in range(c - half, c + half + 1) for r in range(90, 109) if not (x in (c - half, c + half) and r in (90, 108))}
     ears = grid(*other['ears']) if 'ears' in other else {}
     keys = grid(*other['body']) | ({} if other.get('front_ears') else ears) | grid(*other['head'])
     keys |= ears if other.get('front_ears') else {}
     colors = other['colors'] | {k.lower(): v for k, v in other['colors'].items()}
-    return cells | {(c - 11 + x, 101 - h + r): v for (x, r), v in lit({q: k for q, k in keys.items() if q[1] < h}, colors).items()}
+    return cells | {(c - 11 + x, 107 - h + r): v for (x, r), v in lit({q: k for q, k in keys.items() if q[1] < h}, colors).items()}
 
 
 def pet_press(do, kind=None):
@@ -2067,13 +2067,13 @@ def pet_press(do, kind=None):
     if do == 'choose':
         i = list(PETS).index(kind)
         (c, half), up, down = head_tile(i), pet_head(i), pet_head(i, True)
-        c0, r0, c1, r1 = c - half, 84, c + half, 102
+        c0, r0, c1, r1 = c - half, 90, c + half, 108
         name = PETS[kind]['name']
         said, color = f'{name} ON STAGE', PETS[kind]['accent']
     else:
         i = [a[0] for a in ACTIONS].index(do)
         up, down = pet_button(i), pet_button(i, True)
-        (c0, c1), (r0, r1) = [(6, 88), (101, 188), (201, 286)][i], (64, 79)
+        (c0, c1), (r0, r1) = [(6, 88), (101, 188), (201, 286)][i], (70, 85)
         said, color = {'feed': 'FED!', 'pet': 'PETTED!', 'play': 'PLAYED!'}[do], ACTIONS[i][4]
     pad = 8
     w = max(c1 - c0 + 1, text_width(said)) + 2 * pad
@@ -2109,7 +2109,7 @@ def pet_controls():
         n = other['name'].capitalize()
         picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n} on stage.")
     body = pn.draw(info)
-    return slices(pn, alts, body, top=PET_CUT, bottom=81) + slices(pn, picks, body, top=81)
+    return slices(pn, alts, body, top=PET_CUT, bottom=87) + slices(pn, picks, body, top=87)
 
 
 def drums(pn, n, col, row, count=7, w=11, h=15, gap=2):
