@@ -14,6 +14,7 @@ anything moved by whole cells lands on the dots. Text colours are checked agains
 (4.5:1) on the panel background, and all motion is CSS so it stops under
 prefers-reduced-motion.
 """
+import colorsys
 import copy
 import datetime as dt
 import functools
@@ -365,16 +366,6 @@ def write(name, out):
 
 # --- motion (CSS only) ----------------------------------------------------------------
 
-def frames(name, items, dur):
-    """One item visible at a time; reduced motion holds the first one."""
-    n = len(items)
-    css = (f'.{name}{{opacity:0;animation:{name} {num(dur)}s step-end infinite}}.{name}.k0{{opacity:1}}'
-           f'@keyframes {name}{{0%{{opacity:1}}{num(100 / n)}%,100%{{opacity:0}}}}')
-    body = ''.join(f'<g class="{name}{" k0" if i == 0 else ""}" style="animation-delay:{num(i * dur / n)}s">{it}</g>'
-                   for i, it in enumerate(items))
-    return body, css
-
-
 def scroll(name, length, cols_per_s, panel):
     return (f'.{name}{{animation:{name} {num(length / cols_per_s)}s steps({length}) infinite}}'
             f'@keyframes {name}{{to{{transform:translateX(-{panel.px(length)}px)}}}}')
@@ -504,6 +495,7 @@ def halo(col, row, w, h, color, reach=4, rad=None, power=.3, start=1):
             if start < (d := tile_dist(c, r, w, h, rad)) <= start + reach}
 
 
+@functools.lru_cache(maxsize=16)  # the same few cases on every view: the pet card's screen, the counter's housing
 def bezel(col, row, w, h, color):
     """The case around a w x h screen at (col, row): a two-LED rim lit from above with a dim inner lip,
     a faint backlight on the screen and a soft halo outside. Whatever the screen shows is drawn over it."""
@@ -532,206 +524,237 @@ def board_icon(col, row, size=24):
     return cells
 
 
-# The profile pets, 26x24 sprites drawn at scale 2. O outline, G fur, S shade or stripes, W cream, P pink,
-# K eyes, H eye light, E iris, R collar or scarf, Y bell, tag or beak. `frames` are the two idle poses drawn
-# over the body, `shut` the closed eyes; both are {row: (column, run)}, see `layer`. `head` is how many rows
-# the switch under the pet card shows.
+# The profile pets, drawn on a 26x24 grid (each part as its first row and its rows), doubled with scale2x and lit
+# at LED size (see `lit`), so their shading and outline are one LED fine. G fur, S its markings, W cream, D dark
+# fur, P inner ear, R collar or scarf, Y bell, tag or feet; K, H, N and C draw the eyes, nose and cheeks of the
+# switch's small heads only. A lowercase key is its colour on the face, which moves on its own when the pet
+# looks around: those keys, the cheeks, `eyes` (the left eye's corner and size at LED size, the right one
+# mirrors it about column 22) and `mouth` (its corner and sprites at LED size). `marks` are fur markings on the
+# head at LED size. `ears` sit behind the head unless `front_ears`; `twitch` (row, dx, dy) moves the right ear's
+# rows above `row` for a flick. `tail` and `flippers` are chains (see `chain`) swung by `wag`, see `swing`. `cut`
+# is the LED row the body bends at to breathe, crouch and stretch; `tile` how many grid rows the switch shows.
 PETS = {
-    'cat': {'name': 'BYTE', 'noun': 'CAT', 'food': 'fish', 'head': 14, 'accent': '#F0A04B',
-        'colors': {'O': '#5C2E14', 'G': '#F0A04B', 'S': '#C8692A', 'W': '#FFF1D6', 'P': '#FF9DB4', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#8BE38F'},
-        'body': [
-                 '..O............O..',
-                 '.OPO..........OPO.',
-                 '.OPPO........OPPO.',
-                 '.OGPPGOOOOOOGPPGO.',
-                 'OGGGGGGSGGSGGGGGGO',
-                 'OGGGGGGGSSGGGGGGGO',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGGGGKKGGGGKKGGGGO',
-                 'OGGGKHHKGGKHHKGGGO',
-                 'OGGGKHKKGGKHKKGGGO',
-                 'OGPPGKEGGGGKEGPPGO',
-                 '.OGGGGGGPPGGGGGGO.',
-                 '..OGGGGWOOWGGGGO..',
-                 '...OGGGGGGGGGGO...',
-                 '...ORRRRYYRRRRO...',
-                 '..OGGGWWYYWWGGGO..',
-                 '.OSSGGWWWWWWGGSSO.',
-                 '.OGGGGWWWWWWGGGGO.',
-                 '.OSSGGGWWWWGGGSSO.',
-                 '.OGGGGGGGGGGGGGGO.',
-                 '.OGGWWWWGGWWWWGGO.',
-                 '..OGWWWWOOWWWWGO..',
-                 '...OOOOOOOOOOOO...',
-                 ''],
-        'frames': [{12: (19, 'OO'), 13: (18, 'OSSO'), 14: (19, 'OGO'), 15: (19, 'OGO'), 16: (19, 'OGO'), 17: (19, 'OGO'), 18: (18, 'OGO'), 19: (17, 'OGO'), 20: (17, 'GO'), 21: (16, 'OO')},
-                   {12: (20, 'OO'), 13: (19, 'OSSO'), 14: (20, 'OGO'), 15: (20, 'OGO'), 16: (19, 'OGO'), 17: (19, 'OGO'), 18: (18, 'OGO'), 19: (17, 'OGO'), 20: (17, 'GO'), 21: (16, 'OO')}],
-        'shut': {7: (4, 'GGGG..GGGG'), 8: (4, 'KGGK..KGGK'), 9: (4, 'GKKG..GKKG'), 10: (4, 'GGGG..GGGG')}},
-    'dog': {'name': 'PIXEL', 'noun': 'DOG', 'food': 'bone', 'head': 12, 'accent': '#E3B47A',
-        'colors': {'O': '#4A2A14', 'G': '#E3B47A', 'S': '#9C5F2E', 'W': '#FFF1D6', 'P': '#FF7A9A', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#4C8DFF', 'Y': '#FFD866'},
-        'body': [
-                 '...OOOOOOOOOOOO...',
-                 '..OGGGGGGGGGGGGO..',
-                 '.OSOGGGGGGGGGGOSO.',
-                 'OSSSOGGGGGGGGOSSSO',
-                 'OSSSOGGGGGGGGOSSSO',
-                 'OSSSOGHKGGHKGOSSSO',
-                 'OSSSOGKKGGKKGOSSSO',
-                 'OSSSOGGGWWGGGOSSSO',
-                 '.OSSOGGWKKWGGOSSO.',
-                 '..OO.OGWWWWGO.OO..',
-                 '....OGGWPPWGGO....',
-                 '....OGGGPPGGGO....',
-                 '...ORRRRYYRRRRO...',
-                 '...OGGWWYYWWGGO...',
-                 '..OGGGWWWWWWGGGO..',
-                 '..OGGGWWWWWWGGGO..',
-                 '.OGGGGWWWWWWGGGGO.',
-                 '.OGSGGGWWWWGGGSGO.',
-                 '.OGSSGGGWWGGGSSGO.',
-                 '.OGGGGGGGGGGGGGGO.',
-                 '.OGGWWWWGGWWWWGGO.',
-                 '..OGWWWWOOWWWWGO..',
-                 '...OOOOOOOOOOOO...',
-                 ''],
-        'frames': [{12: (18, 'OO'), 13: (17, 'OGGO'), 14: (16, 'OGGO'), 15: (16, 'OGO')},
-                   {13: (17, 'OOO'), 14: (16, 'OGGGO'), 15: (16, 'OOO')}],
-        'shut': {5: (6, 'GG..GG'), 6: (6, 'KK..KK')}},
-    'bunny': {'name': 'NIBBLE', 'noun': 'BUNNY', 'food': 'carrot', 'head': 15, 'accent': '#FF8FB0',
-        'colors': {'O': '#4E4858', 'G': '#ECE8F4', 'S': '#B8B0C8', 'W': '#FFFFFF', 'P': '#FF9DB4', 'K': '#2A1A2E', 'H': '#FFFFFF', 'R': '#FF8FB0', 'Y': '#FFD866', 'E': '#FF5C8A'},
-        'body': [
-                 '',
-                 '',
-                 '',
-                 '...OGPO....OPGO...',
-                 '...OGPO....OPGO...',
-                 '..OOGPOOOOOOPGOO..',
-                 '.OGGGGGGGGGGGGGGO.',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGGGGKKGGGGKKGGGGO',
-                 'OGGGKHHKGGKHHKGGGO',
-                 'OGGGKHKKGGKHKKGGGO',
-                 'OGPPGKEGGGGKEGPPGO',
-                 '.OGGGGGGPPGGGGGGO.',
-                 '..OGGGGWOOWGGGGO..',
-                 '...OOGGGGGGGGOO...',
-                 '...OGSGWWWWGSGO...',
-                 '..OGGSGWWWWGSGGO..',
-                 '.OGGGGGWWWWGGGGGO.',
-                 '.OGSGGGWWWWGGGSGO.',
-                 '.OGGGGGGGGGGGGGGO.',
-                 '.OGGWWWWGGWWWWGGO.',
-                 '..OGWWWWOOWWWWGO..',
-                 '...OOOOOOOOOOOO...',
-                 ''],
-        'frames': [{0: (3, 'OO........OO'), 1: (3, 'OGO......OGO'), 2: (3, 'OGPO....OPGO'), 17: (16, 'OWWO'), 18: (16, 'OWWWO'), 19: (16, 'OWWO')},
-                   {0: (3, 'OO'), 1: (3, 'OGO.......OOOO'), 2: (3, 'OGPO....OPGGGO'), 17: (16, 'OWWO'), 18: (16, 'OWWWO'), 19: (16, 'OWWO')}],
-        'shut': {8: (4, 'GGGG..GGGG'), 9: (4, 'KGGK..KGGK'), 10: (4, 'GKKG..GKKG'), 11: (4, 'GGGG..GGGG')}},
-    'fox': {'name': 'HEX', 'noun': 'FOX', 'food': 'bone', 'head': 14, 'accent': '#FF7A1F',
-        'colors': {'O': '#4A1E0A', 'G': '#FF7A1F', 'S': '#C2500F', 'W': '#FFF1D6', 'P': '#FF9DB4', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#FFD866'},
-        'body': [
-                 '.OO............OO.',
-                 '.OKO..........OKO.',
-                 '.OGKO........OKGO.',
-                 '.OGGSOOOOOOOOSGGO.',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGGGGKKGGGGKKGGGGO',
-                 'OGGGKHHKGGKHHKGGGO',
-                 'OGGGKHKKGGKHKKGGGO',
-                 'OGWWGKEGGGGKEGWWGO',
-                 '.OWWWWWWKKWWWWWWO.',
-                 '..OWWWWWOOWWWWWO..',
-                 '...OOWWWWWWWWOO...',
-                 '....OGGWWWWGGO....',
-                 '...OGGWWWWWWGGO...',
-                 '..OGGGWWWWWWGGGO..',
-                 '.OGGGGWWWWWWGGGGO.',
-                 '.OGGGGGWWWWGGGGGO.',
-                 '.OGGGGGGGGGGGGGGO.',
-                 '.OGGSSSSGGSSSSGGO.',
-                 '..OGSSSSOOSSSSGO..',
-                 '...OOOOOOOOOOOO...',
-                 ''],
-        'frames': [{11: (19, 'OO'), 12: (18, 'OWWO'), 13: (17, 'OWWWO'), 14: (17, 'OGGGO'), 15: (17, 'OGGGGO'), 16: (17, 'OGGGGO'), 17: (17, 'OGGGGO'), 18: (16, 'OGGGGO'), 19: (16, 'OGGGO'), 20: (16, 'OGGO'), 21: (16, 'OGO')},
-                   {12: (20, 'OO'), 13: (19, 'OWWO'), 14: (18, 'OWWWO'), 15: (17, 'OGGGGO'), 16: (17, 'OGGGGO'), 17: (17, 'OGGGGO'), 18: (16, 'OGGGGO'), 19: (16, 'OGGGO'), 20: (16, 'OGGO'), 21: (16, 'OGO')}],
-        'shut': {7: (4, 'GGGG..GGGG'), 8: (4, 'KGGK..KGGK'), 9: (4, 'GKKG..GKKG'), 10: (4, 'GGGG..GGGG')}},
-    'penguin': {'name': 'SUDO', 'noun': 'PENGUIN', 'food': 'fish', 'head': 11, 'accent': '#8FB2FF',
-        'colors': {'O': '#1C2033', 'G': '#4A5578', 'S': '#323A58', 'W': '#F4F6FF', 'P': '#FF9DB4', 'K': '#141624', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFB02E'},
-        'body': [
-                 '',
-                 '......OOOOOO......',
-                 '....OOGGGGGGOO....',
-                 '...OGGGGGGGGGGO...',
-                 '..OGGGGGGGGGGGGO..',
-                 '..OGGWWWGGWWWGGO..',
-                 '..OGWWHKWWHKWWGO..',
-                 '..OGWWKKWWKKWWGO..',
-                 '..OGWWWWYYWWWWGO..',
-                 '..OGGWWYYYYWWGGO..',
-                 '...OGGWWWWWWGGO...',
-                 '...ORRRRRRRRRRO...',
-                 '..OGRRWWWWWWWGGO..',
-                 '.OSGRRWWWWWWWWGGO.',
-                 'OSSGGWWWWWWWWWGGO.',
-                 'OSSGGWWWWWWWWWGGO.',
-                 'OSSGGWWWWWWWWWGGO.',
-                 '.OSGGWWWWWWWWWGGO.',
-                 '..OGGWWWWWWWWWGGO.',
-                 '..OGGGWWWWWWWGGGO.',
-                 '...OGGGWWWWWGGGO..',
-                 '....OOOOOOOOOOO...',
-                 '...OYYYO...OYYYO..',
-                 ''],
-        'frames': [{13: (16, 'O'), 14: (16, 'SO'), 15: (16, 'SSO'), 16: (16, 'SSO'), 17: (16, 'SO')},
-                   {11: (17, 'OO'), 12: (16, 'OSSO'), 13: (16, 'SSO'), 14: (16, 'SO')}],
-        'shut': {6: (6, 'WW..WW'), 7: (6, 'KK..KK')}},
-    'frog': {'name': 'PING', 'noun': 'FROG', 'food': 'fly', 'head': 10, 'accent': '#6FD36B',
-        'colors': {'O': '#173A12', 'G': '#6FD36B', 'S': '#3C9A38', 'W': '#E6F5C4', 'P': '#FF9DB4', 'K': '#0E1A0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#F5D547'},
-        'body': [
-                 '..OOOO......OOOO..',
-                 '.OWHWWO....OWHWWO.',
-                 '.OWKKWO....OWKKWO.',
-                 '.OWKKWOOOOOOWKKWO.',
-                 'OGOWWOGGGGGGOWWOGO',
-                 'OGGOOGGGGGGGGOOGGO',
-                 'OGGGGGGGGGGGGGGGGO',
-                 'OGPPGGGGGGGGGGPPGO',
-                 'OGGGOOOOOOOOOOGGGO',
-                 '.OGGGGGGGGGGGGGGO.',
-                 '..OOGGGGGGGGGGOO..',
-                 '...OGGWWWWWWGGO...',
-                 '..OGGWWWWWWWWGGO..',
-                 '.OGSGWWWWWWWWGSGO.',
-                 '.OGSGWWWWWWWWGSGO.',
-                 'OGGSGGWWWWWWGGSGGO',
-                 'OGGGSGGWWWWGGSGGGO',
-                 'OGGGGSGGGGGGSGGGGO',
-                 '.OGGGGGGGGGGGGGGO.',
-                 'OGSGOGGGOOGGGOGSGO',
-                 'OGGGGOOO..OOOGGGGO',
-                 '.OOOO........OOOO.',
-                 ''],
-        'frames': [{9: (5, 'GGGGGGGG')}, {9: (5, 'OWWWWWWO'), 10: (4, 'OWWWWWWWWO')}],  # the throat puffs to croak
-        'shut': {1: (2, 'GGGG......GGGG'), 2: (2, 'OOOO......OOOO'), 3: (2, 'GGGG......GGGG')}},
+    'cat': {'name': 'BYTE', 'noun': 'CAT', 'food': 'fish', 'tile': 15, 'accent': '#F0A04B', 'cut': 36,
+        'colors': {'G': '#F0A04B', 'S': '#C8692A', 'W': '#FFF1D6', 'P': '#F58BA0', 'K': '#1A0F0A', 'H': '#FFFFFF', 'N': '#FF8FA8',
+                   'C': '#FF9DB4', 'R': '#F23645', 'Y': '#FFD866', 'E': '#5FD068', 'T': '#FF7A9A', 'M': '#6A2E1A'},
+        'ears': (1, ['...G..............G',
+                     '...GG............GG',
+                     '...GPG..........GPG',
+                     '..GGPPG........GPPGG',
+                     '..GGPPGG......GGPPGG',
+                     '..GGGGGG......GGGGGG']),
+        'twitch': (4, 1, 0),
+        'head': (5, ['.....GGGGGGGGGGGG',
+                     '...GGGGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGHKGGGGGGGGGGHKGGG',
+                     'GGGGKKGGGGGGGGGGKKGGGG',
+                     'GGGCCGGGGGNNGGGGGCCGGG',
+                     '.GGGGGGGwwwwwwGGGGGGG',
+                     '..GGGGGGGwwwwGGGGGGG',
+                     '....GGGGGGGGGGGGGG']),
+        'body': (13, ['.....GGGGGGGGGGGG',
+                      '....GGGGGGGGGGGGGG',
+                      '....RRRRRRYYRRRRRR',
+                      '...GGGGWWWYYWWWGGGG',
+                      '...GGGGWWWWWWWWGGGG',
+                      '..GGGGGWWWWWWWWGGGGG',
+                      '..GSSGGGWWWWWWGGGSSG',
+                      '..SGGSGGGWGGWGGGSGGS',
+                      '..SGGSGWWWGGWWWGSGGS',
+                      '..GGGGGWWW..WWWGGGGG']),
+        'eyes': (7, 16, (6, 7)),
+        'marks': (17, 11, ['.S...SS...S', '.S...SS...S', 'S....SS....S', '.....SS.....']),
+        'mouth': (18, 22, {'shut': ['..nNNN..', '...NN...', '...MM...', '.MM..MM.'],
+                           'open': ['..nNNN..', '...NN...', '..MMMM..', '..MTTM..', '...MM...'],
+                           'lick': ['..nNNN..', '...NN...', '...MM...', '.MMTTMM.', '...TT...']}),
+        'tail': {'root': (37, 41), 'angle': 80, 'segs': 10, 'length': 2.6, 'widths': (3.4, 2.6), 'curl': -10, 'swing': 16,
+                 'lag': .55, 'stripes': 3.5},
+        'wag': [(.14, 1, 1)]},
+    'dog': {'name': 'PIXEL', 'noun': 'DOG', 'food': 'bone', 'tile': 14, 'accent': '#E3B47A', 'cut': 36,
+        'colors': {'G': '#E3B47A', 'S': '#9C5F2E', 'W': '#FFF1D6', 'K': '#1A0F0A', 'H': '#FFFFFF', 'N': '#3A2418', 'C': '#FF9DB4',
+                   'R': '#4C8DFF', 'Y': '#FFD866', 'E': '#9A6A3A', 'T': '#FF7A9A', 'M': '#4A2A14'},
+        'ears': (3, ['..SSS............SSS',
+                     '.SSSSS..........SSSSS',
+                     'SSSSSS..........SSSSSS',
+                     'SSSSS............SSSSS',
+                     'SSSSS............SSSSS',
+                     'SSSSS............SSSSS',
+                     'SSSS..............SSSS',
+                     '.SS................SS']),
+        'front_ears': True, 'twitch': (11, 0, -1),
+        'head': (2, ['....GGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGGHKGGGGGGGGHKGGGG',
+                     '.GGGGKKGGGGGGGGKKGGGG',
+                     '.GGCCGGGwwwwwwGGGCCGG',
+                     '..GGGGGwwwNNwwwGGGGG',
+                     '..GGGGGwwwwwwwwGGGGG',
+                     '...GGGGGwwwwwwGGGGG',
+                     '....GGGGGGGGGGGGGG']),
+        'body': (13, ['.....GGGGGGGGGGGG',
+                      '....GGGGGGGGGGGGGG',
+                      '....RRRRRRYYRRRRRR',
+                      '...GGGGWWWYYWWWGGGG',
+                      '...GGGGWWWWWWWWGGGG',
+                      '..SSSGGWWWWWWWWGGGGG',
+                      '..SSSSGGWWWWWWGGGGGG',
+                      '..GSSGGGGWGGWGGGGGGG',
+                      '..GGGGGWWWGGWWWGGGGG',
+                      '..GGGGGWWW..WWWGGGGG']),
+        'eyes': (10, 14, (5, 6)),
+        'mouth': (18, 20, {'shut': ['.nNNNNN.', '.NNNNNN.', '..NNNN..', '...MM...', '.MM..MM.'],
+                           'open': ['.nNNNNN.', '.NNNNNN.', '..NNNN..', '...MM...', '.MMMMMM.', '.MTTTTM.', '..MTTM..'],
+                           'lick': ['.nNNNNN.', '.NNNNNN.', '..NNNN..', '...MM...', '.MMTTMM.', '...TT...', '...TT...']}),
+        'tail': {'root': (37, 38), 'angle': 45, 'segs': 5, 'length': 2.3, 'widths': (3.8, 2.6), 'curl': -12, 'swing': 34, 'lag': .4},
+        'wag': [(.05, .02, 4), (.12, .45, 1), (0, 1.2, 0)]},
+    'bunny': {'name': 'NIBBLE', 'noun': 'BUNNY', 'food': 'carrot', 'tile': 15, 'accent': '#FF8FB0', 'cut': 38,
+        'colors': {'G': '#ECE8F4', 'S': '#C9C0DA', 'W': '#FFFFFF', 'P': '#FF9DB4', 'K': '#2A1A2E', 'H': '#FFFFFF', 'N': '#FF7A9A',
+                   'C': '#FF9DB4', 'E': '#C24A6A', 'T': '#FF7A9A', 'M': '#8A6A8A'},
+        'ears': (0, ['...GG............GG',
+                     '..GPPG..........GPPG',
+                     '..GPPG..........GPPG',
+                     '..GPPG..........GPPG',
+                     '..GPPG..........GPPG',
+                     '..GPPG..........GPPG',
+                     '...GPG..........GPG',
+                     '...GGG..........GGG']),
+        'twitch': (4, 1, 0),
+        'head': (6, ['.....GGGGGGGGGGGG',
+                     '...GGGGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGHKGGGGGGGGGGHKGGG',
+                     '.GGGKKGGGGGGGGGGKKGGG',
+                     '.GGCCGGGGGNNGGGGGCCGG',
+                     '..GGGGGGwwwwwwGGGGGG',
+                     '...GGGGGGwwwwGGGGGG',
+                     '.....GGGGGGGGGGGG']),
+        'body': (15, ['.....GGGGGGGGGGGG',
+                      '....GGGGGGGGGGGGGG',
+                      '...GGGGWWWWWWWWGGGG',
+                      '..GGGGWWWWWWWWWWGGGG',
+                      '..GGGGWWWWWWWWWWGGGG',
+                      '..GSGGGWWWWWWWWGGGSG',
+                      '.GGSGGGWWWGGWWWGGGSGG',
+                      '.WWWGGGWWW..WWWGGGWWW']),
+        'eyes': (7, 19, (6, 7)),
+        'mouth': (19, 24, {'shut': ['.nNNN.', '..NN..', '..MM..', '.M..M.'],
+                           'sniff': ['.nNNN.', '.NNNN.', '..MM..', '.M..M.'],
+                           'open': ['.nNNN.', '..NN..', '..MM..', '.MWWM.', '..WW..'],
+                           'lick': ['.nNNN.', '..NN..', '..MM..', '.MTTM.', '..TT..']}),
+        'tail': {'root': (39, 41), 'angle': 90, 'segs': 2, 'length': 1.5, 'widths': (7, 7), 'key': 'W', 'swing': 25},
+        'wag': [(.08, 0, 2), (0, 2.5, 0)]},
+    'fox': {'name': 'HEX', 'noun': 'FOX', 'food': 'bone', 'tile': 15, 'accent': '#FF7A1F', 'cut': 36,
+        'colors': {'G': '#FF7A1F', 'S': '#C2500F', 'W': '#FFF1D6', 'D': '#4A2414', 'P': '#FFC9A0', 'K': '#1A0F0A', 'H': '#FFFFFF',
+                   'N': '#2A1A12', 'C': '#FF9DB4', 'E': '#FFC94A', 'T': '#FF7A9A', 'M': '#4A1E0A'},
+        'ears': (0, ['.DD................DD',
+                     '.DDD..............DDD',
+                     '.GDDG............GDDG',
+                     '.GGPGG..........GGPGG',
+                     '.GGPPGG........GGPPGG',
+                     '.GGPPGGG......GGGPPGG',
+                     '.GGGGGG........GGGGGG']),
+        'twitch': (4, 1, 0),
+        'head': (5, ['....GGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     '.GGGHKGGGGGGGGGGHKGGG',
+                     'WGGGKKGGGGGGGGGGKKGGGW',
+                     'WWWGGGGGGwNNwGGGGGGWWW',
+                     '.WWWWWWwwwwwwwwWWWWWW',
+                     '..WWWWWWwwwwwwWWWWWW',
+                     '....WWWWWWWWWWWWWW']),
+        'body': (14, ['....GGGGGGGGGGGGGG',
+                      '....GGGGWWWWWWGGGG',
+                      '...GGGGWWWWWWWWGGGG',
+                      '...GGGGWWWWWWWWGGGG',
+                      '..GGGGGWWWWWWWWGGGGG',
+                      '..GGGGGGWWWWWWGGGGGG',
+                      '..GGGGGGGWGGWGGGGGGG',
+                      '..GGGGDDGGGGGGDDGGGG',
+                      '..GGGGDDD....DDDGGGG']),
+        'eyes': (7, 17, (6, 7)),
+        'mouth': (19, 22, {'shut': ['.nNNN.', '.NNNN.', '..NN..', '..MM..', 'MM..MM'],
+                           'open': ['.nNNN.', '.NNNN.', '..NN..', '.MMMM.', '.MTTM.', '..MM..'],
+                           'lick': ['.nNNN.', '.NNNN.', '..NN..', '..MM..', 'MMTTMM', '..TT..']}),
+        'tail': {'root': (38, 42), 'angle': 75, 'segs': 7, 'length': 3, 'widths': (5, 9, 5), 'tip': .3, 'curl': -12, 'swing': 12,
+                 'lag': .5},
+        'wag': [(.16, .8, 1)]},
+    'penguin': {'name': 'SUDO', 'noun': 'PENGUIN', 'food': 'fish', 'tile': 14, 'accent': '#8FB2FF', 'cut': 36,
+        'colors': {'G': '#4A5578', 'S': '#323A58', 'W': '#F4F6FF', 'Y': '#FFB02E', 'B': '#D98A1E', 'R': '#F23645', 'K': '#141624',
+                   'H': '#FFFFFF', 'N': '#FFB02E', 'C': '#FF9DB4', 'E': '#6A80C0', 'T': '#FF7A9A', 'M': '#7A4A10'},
+        'head': (1, ['......GGGGGGGGGG',
+                     '....GGGGGGGGGGGGGG',
+                     '...GGGGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '..GGGWWWGGGGGGWWWGGG',
+                     '..GGWWWWWGWWGWWWWWGG',
+                     '..GWWHKWWWWWWWWHKWWG',
+                     '..GWWKKWWWWWWWWKKWWG',
+                     '..GWCCWWWNNNNWWWCCWG',
+                     '..GGWWWWWWNNWWWWWWGG',
+                     '...GGWWWWWWWWWWWWGG',
+                     '....GGGGGGGGGGGGGG']),
+        'body': (12, ['....GGGGGGGGGGGGGG',
+                      '...GRRRRRRRRRRRRRRG',
+                      '..GGRRRRRRRRRRRRRRGG',
+                      '.GGGWWWWWWWWWWRRWWGGG',
+                      '.GGWWWWWWWWWWWWRRWWGG',
+                      '.GGWWWWWWWWWWWWRWWWGG',
+                      '.GGWWWWWWWWWWWWWWWWGG',
+                      '..GWWWWWWWWWWWWWWWWG',
+                      '..GGWWWWWWWWWWWWWWGG',
+                      '...GGWWWWWWWWWWWWGG',
+                      '....YYY........YYY']),
+        'eyes': (10, 14, (5, 6)),
+        'mouth': (18, 18, {'shut': ['..nYYY..', '.YYYYYY.', '..BBBB..', '...BB...'],
+                           'open': ['..nYYY..', '.YYYYYY.', '.MMMMMM.', '..BBBB..', '...BB...'],
+                           'lick': ['..nYYY..', '.YYYYYY.', '..BTTB..', '...TT...']}),
+        'flippers': {'root': (6, 31), 'angle': 200, 'segs': 4, 'length': 2.6, 'widths': (4.4, 2.6), 'curl': 8, 'swing': 14, 'lag': .3},
+        'wag': [(.07, 0, 2), (0, 3.1, 0)]},
+    'frog': {'name': 'PING', 'noun': 'FROG', 'food': 'fly', 'tile': 12, 'accent': '#6FD36B', 'cut': 34,
+        'colors': {'G': '#6FD36B', 'S': '#3C9A38', 'W': '#E6F5C4', 'K': '#0E1A0A', 'H': '#FFFFFF', 'C': '#FF9DB4', 'E': '#F5D547',
+                   'T': '#FF7A9A', 'M': '#1F4A1A', 'N': '#1F4A1A'},
+        'head': (1, ['..GGGG..........GGGG',
+                     '.GKHKG..........GKHKG',
+                     '.GKKKG..........GKKKG',
+                     '.GGGGGGGGGGGGGGGGGGGG',
+                     'GGGGGGGGGGGGGGGGGGGGGG',
+                     'GGGGGGGGGGGGGGGGGGGGGG',
+                     'GGCCGGGGGGGGGGGGGGCCGG',
+                     'GGGGGGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGGGGGGGGGGGGGGG']),
+        'body': (9, ['..GGGGGGGGGGGGGGGGGG',
+                     '..GGGGGGGGGGGGGGGGGG',
+                     '.GGGGGGWWWWWWWWGGGGGG',
+                     '.GGGGGWWWWWWWWWWGGGGG',
+                     'GGGGGWWWWWWWWWWWWGGGGG',
+                     'GSGGGWWWWWWWWWWWWGGGSG',
+                     'GGGSGGWWWWWWWWWWGGSGGG',
+                     'GGGGGGGWWWWWWWWGGGGGGG',
+                     'GSGGGSGGWWWWWWGGSGGGSG',
+                     'GGGGGSGGGWWWWGGGSGGGGG',
+                     'GGGGGGSGGGGGGGGSGGGGGG',
+                     '.GGGGGS.GGGGGG.SGGGGG',
+                     'GGGGGG..GGGGGG..GGGGGG',
+                     'G.G.G...G.GG.G...G.G.G']),
+        'eyes': (5, 3, (6, 6)), 'look': 1,
+        'mouth': (14, 14, {'shut': ['...N........N...'],
+                           'open': ['...N........N...', '................', '..MMMMMMMMMMMM..', '.MMTTTTTTTTTTMM.', '..MMMMMMMMMMMM..'],
+                           'lick': ['...N........N...', '................', '................', '......TTTT......', '.......TT.......']}),
+        'throat': (22, 20)},
 }
 
 
-def layer(spec):
-    """Sprite rows from {row: (column, run)}: a pose or a face drawn over a pet's body."""
-    return ['.' * spec[r][0] + spec[r][1] if r in spec else '' for r in range(max(spec) + 1)]
-
-
-def compose(*layers, w=26, h=24):
-    """Sprite layers flattened, later ones on top."""
-    grid = [['.'] * w for _ in range(h)]
-    for rows in layers:
-        for r, line_ in enumerate(rows[:h]):
-            for c, k in enumerate(line_[:w]):
-                if k != '.':
-                    grid[r][c] = k
-    return [''.join(row) for row in grid]
+def grid(first, rows):
+    """{(col, row): key} of sprite rows that start at grid row `first`; '.' is empty."""
+    return {(c, first + r): k for r, ln in enumerate(rows) for c, k in enumerate(ln) if k != '.'}
 
 
 def scale2x(rows):
@@ -750,7 +773,128 @@ def scale2x(rows):
             bottom += [l if d == l and d != b and l != a else p, b if b == d and b != a and d != l else p]
         out += [''.join(top), ''.join(bottom)]
     return out
-HEART = ['.R.R.', 'RRRRR', 'RRRRR', '.RRR.', '..R..']
+
+
+def doubled(cells, w=26, h=24):
+    """A grid sprite ({(col, row): key}) at LED size, through scale2x."""
+    rows = [''.join(cells.get((c, r), '.') for c in range(w)) for r in range(h)]
+    return {(c, r): k for r, ln in enumerate(scale2x(rows)) for c, k in enumerate(ln) if k != '.'}
+
+
+def bent(cells, cut, rise, widen=0, mid=22):
+    """A body breathing in, crouching or stretching: the rows above `cut` raised `rise` LEDs (lowered when it is
+    negative), the rows they leave repeating the row at the cut or those they cover folded away, then `widen`
+    LEDs more width (less when negative) taken at column `mid`. The light and outline move with the fur."""
+    out = {}
+    for (c, r), v in cells.items():
+        if r < cut:
+            out[(c, r - rise)] = v
+        elif not (rise < 0 and r < cut - rise):
+            out[(c, r)] = v
+            if r == cut and rise > 0:
+                out |= {(c, cut - i): v for i in range(1, rise + 1)}
+    k, wide = widen // 2, {}
+    for (c, r), v in out.items():
+        if k >= 0:
+            wide[(c - k if c < mid else c + k, r)] = v
+            if c in (mid - 1, mid):  # the middle columns, repeated to fill the gap
+                wide |= {(c + (i if c == mid else -i), r): v for i in range(k)}
+        elif not mid + k <= c < mid - k:
+            wide[(c - k if c < mid else c + k, r)] = v
+    return wide
+
+
+def shaded(hex_, light, colour=1., toward=0., most=0.):
+    """hex_ at `light` times its lightness, with `colour` times its chroma (kept, not its saturation, so a pale
+    colour stays pale as it darkens) and its hue moved up to `most` toward `toward`."""
+    h, l, s = colorsys.rgb_to_hls(*(v / 255 for v in rgb(hex_)))
+    chroma = (1 - abs(2 * l - 1)) * s
+    l2 = min(1., l * light) if light <= 1 else l + (1 - l) * (light - 1)
+    room = 1 - abs(2 * l2 - 1)
+    d = (toward - h + .5) % 1 - .5
+    h2 = h + max(-most, min(most, d)) * min(1, chroma * 3)  # greys keep their hue
+    return hexc(v * 255 for v in colorsys.hls_to_rgb(h2 % 1, l2, min(1, chroma * colour / room) if room else 0))
+
+
+@functools.lru_cache(maxsize=128)
+def ramp(hex_):
+    """A colour's four tones on a pet, from deep shadow to light: shadows lean to blue and lights to yellow, as
+    paint does."""
+    return shaded(hex_, .62, 1.12, .7, .05), shaded(hex_, .8, 1.06, .7, .025), hex_, shaded(hex_, 1.35, .95, .13, .025)
+
+
+@functools.lru_cache(maxsize=256)
+def rim(hex_, lit_side):
+    """The outline LED next to a colour: a dark tone of it, a little lighter on the side the light comes from."""
+    return shaded(hex_, .42 if lit_side else .3, 1.2)
+
+
+LIGHT = (-.55, -.835)  # where the pets' light comes from: above, a little to the left
+FLAT = 'KH'  # keys drawn as they are: the small heads' eyes and their light
+
+
+def lit(keys, colors):
+    """A sprite at LED size ({(col, row): key}) lit from LIGHT: one LED of light along the edges that face it, a
+    shadow two LEDs deep along those that turn away and a darker line where they face fully away, then a one-LED
+    outline in a dark tone of the colour inside it. Each LED gets one flat colour: no anti-aliasing."""
+    out, ring = {}, {}
+    for (c, r), k in keys.items():
+        if k in FLAT:
+            out[(c, r)] = colors[k]
+            continue
+        sx = sy = n = 0
+        edge = 3
+        for dr in (-2, -1, 0, 1, 2):
+            for dc in (-2, -1, 0, 1, 2):
+                if (c + dc, r + dr) in keys:
+                    sx, sy, n = sx + dc, sy + dr, n + 1
+                else:
+                    edge = min(edge, max(abs(dc), abs(dr)))
+        m = math.hypot(sx, sy)
+        facing = -(sx * LIGHT[0] + sy * LIGHT[1]) / m if m > n * .05 else 0  # the edge's normal points away from the inside
+        tone = 3 if edge <= 1 and facing > .3 else 0 if edge <= 1 and facing < -.55 else 1 if edge <= 2 and facing < -.2 else 2
+        out[(c, r)] = ramp(colors[k])[tone]
+        for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (c + dc, r + dr) not in keys and (c + dc, r + dr) not in ring:
+                ring[(c + dc, r + dr)] = rim(colors[k], dr < 0 or dc < 0)
+    return ring | out
+
+
+def chain(spec, phase):
+    """A tail or flipper as {(col, row): key} at LED size: `segs` segments of `length` from `root`, each turned
+    `curl` degrees from the last (0 is up, 90 right) and swung `swing` degrees by a wave that starts at the root
+    and reaches the tip later, so the tip follows through. `phase` (0-1) is where the swing is; `widths` run
+    from root to tip, `tip` is the share of the length drawn in W and `stripes` the length of each band of S."""
+    (x, y), segs, length, widths = spec['root'], spec['segs'], spec['length'], spec['widths']
+    keys, total = {}, segs * length
+    for i in range(segs):
+        a = math.radians(spec['angle'] + spec.get('curl', 0) * i
+                         + spec.get('swing', 0) * (.35 + .65 * i / segs) * math.sin(2 * math.pi * phase - spec.get('lag', .6) * i))
+        for j in range(8):
+            s = (i * length + j * length / 8) / total
+            if len(widths) == 2:
+                w = widths[0] + (widths[1] - widths[0]) * s
+            else:
+                w = widths[0] + (widths[1] - widths[0]) * s * 2 if s < .5 else widths[1] + (widths[2] - widths[1]) * (s - .5) * 2
+            px_, py_ = x + math.sin(a) * length * j / 8, y - math.cos(a) * length * j / 8
+            k = ('W' if s > 1 - spec.get('tip', 0) else
+                 'S' if spec.get('stripes') and int(s * total / spec['stripes']) % 2 else spec.get('key', 'G'))
+            for r in range(math.floor(py_ - w / 2), math.ceil(py_ + w / 2) + 1):
+                for c in range(math.floor(px_ - w / 2), math.ceil(px_ + w / 2) + 1):
+                    if (c + .5 - px_) ** 2 + (r + .5 - py_) ** 2 <= w * w / 4:
+                        keys[(c, r)] = k
+        x, y = x + math.sin(a) * length, y - math.cos(a) * length
+    return keys
+
+
+EYES = {  # at LED size: K pupil, I and J the iris, deep then lit, H the light it catches, W the frog's cream
+    (6, 7): ['.KKKK.', 'KHHKKK', 'KHHKKK', 'KKKKKK', 'KIIIIK', 'KIJJHK', '.JJJJ.'],
+    (5, 6): ['.KKK.', 'KHHKK', 'KHKKK', 'KIIIK', 'KIJHK', '.JJJ.'],
+    (6, 6): ['.WWWW.', 'WHKKWW', 'WKKKKW', 'WKKKKW', 'WWKKWW', '.WWWW.'],
+}
+
+HEART = ['.RR.RR.', 'RHRRRRR', 'RRRRRRR', '.RRRRR.', '..RRR..', '...R...']
+SPARKLE = ['..C..', '..C..', 'CCWCC', '..C..', '..C..']
 FISH = [['..BBB...B', '.BBBBB.BB', 'B.BBBBBBB', '.BBBBB.BB', '..BBB...B'],
         ['....B...B', '...BB.BB.', '..BBBBBBB', '...BB.BB.', '....B...B'],
         ['.........', '.W.W.W..W', 'WWWWWWWWW', '.W.W.W..W', '.........']]
@@ -760,11 +904,9 @@ BONE = [['WW.....WW', 'WWWWWWWWW', '.WWWWWWW.', 'WWWWWWWWW', 'WW.....WW'],
 CARROT = [['......L.L', '..CCCCCL.', 'CCCCCCCLL', '..CCCCCL.', '......L.L'],
           ['......L.L', '.....CCL.', '....CCCLL', '.....CCL.', '......L.L'],
           ['......L.L', '.......L.', '.......LL', '.......L.', '......L.L']]
-FLY = [['.WW.WW...', '..WKW....', '.KKKKK...', '..KKK....', '...K.....'],
-       ['.W..W....', '..KKW....', '.KKKK....', '..KK.....', '.........'],
-       ['.........', '..K......', '.K.K.....', '.........', '.........']]
+FLY = [['.WW.WW', '..WKW.', '.KKKKK', '..KKK.'], ['......', '.WWKW.', '.KKKKK', '..KKK.']]  # wings up, wings down
 FOOD = {'fish': (FISH, {'B': '#7EC8FF', 'W': CREAM}), 'bone': (BONE, {'W': CREAM}),
-        'carrot': (CARROT, {'C': '#FF8A2A', 'L': '#7BD88F'}), 'fly': (FLY, {'K': '#2A2E33', 'W': '#CFE8FF'})}  # three bites each
+        'carrot': (CARROT, {'C': '#FF8A2A', 'L': '#7BD88F'}), 'fly': (FLY, {'K': '#8C96A6', 'W': '#DDF0FF'})}  # three bites each
 BALL = ['.YYYY.', 'YYRRYY', 'YRRYYY', 'YYYYRY', 'YYYRRY', '.YYYY.']
 ICONS = {  # 9x9 button icons
     'globe': ['..CCCCC..', '.C..C..C.', 'C..C.C..C', 'CCCCCCCCC', 'C..C.C..C', 'CCCCCCCCC', 'C..C.C..C', '.C..C..C.', '..CCCCC..'],
@@ -1323,6 +1465,352 @@ def pet_card():
     return Panel(290, 106, width=900)
 
 
+POSES = {'rest': (0, 0), 'in': (1, 0), 'crouch': (-3, 2), 'stretch': (2, -2), 'land': (-4, 4)}  # (rise, widen), see `bent`
+
+
+@functools.lru_cache(maxsize=8)
+def pet_art(kind):
+    """A pet's parts at LED size, relative to its top left, worked out once per pet: what pet_scene moves."""
+    p = PETS[kind]
+    colors = p['colors'] | {k.lower(): v for k, v in p['colors'].items()}
+    colors['n'] = ramp(colors['N'])[3]  # the light on the nose
+    head = grid(*p['head'])
+
+    def painted(keep_face):
+        """The head with its small face painted over by the commonest colour around each LED of it."""
+        out = {}
+        for (c, r), k in head.items():
+            if k in 'KHNC' or (k.islower() and not keep_face):
+                near = [head.get((c + i, r + j), '.') for i in range(-2, 3) for j in range(-2, 3)]
+                near = [q for q in near if q not in '.KHNC' and (keep_face or not q.islower())]
+                k = max(sorted(set(near)), key=near.count) if near else 'G'
+            out[(c, r)] = k
+        return out
+    bare = doubled(painted(False))
+    if 'marks' in p:
+        x, y, rows = p['marks']
+        bare |= {(x + c, y + r): 'S' for r, ln in enumerate(rows) for c, k in enumerate(ln) if k == 'S' and (x + c, y + r) in bare}
+    base = lit(bare, colors)
+    with_face = doubled(painted(True))
+    whole = lit({q: k.upper() for q, k in with_face.items()}, colors)
+    face = {q: whole[q] for q, k in with_face.items() if k.islower()}
+    face |= {(2 * c + i, 2 * r + j): hexc(mix(rgb(base[(2 * c + i, 2 * r + j)]), rgb(colors['C']), .75))
+             for (c, r), k in head.items() if k == 'C' for i in (0, 1) for j in (0, 1)}  # blush on the cheeks
+    x, y, (w, h) = p['eyes']
+    shape = [(c, r, k) for r, ln in enumerate(EYES[(w, h)]) for c, k in enumerate(ln) if k != '.']
+    iris = ramp(colors['E'])
+    paint = {'K': '#140C08', 'H': '#FFFFFF', 'I': iris[0], 'J': colors['E'], 'W': '#F4F1E6'}
+    corners = (x, 44 - x - w)  # the right eye mirrors the left one about column 22
+    dark = shaded(base[(x + w // 2, y + h // 2)], .35, 1.2)
+
+    def lids(fur_rows, line):
+        """Both eyelids in one state: the fur under the eye over its rows in fur_rows, then a dark line."""
+        out = {}
+        for x0 in corners:
+            out |= {(x0 + c, y + r): base[(x0 + c, y + r)] for c, r, _ in shape if r in fur_rows}
+            out |= {(x0 + c, y + r): dark for c, r in line}
+        return out
+    mid = h // 2
+    mx, my, mouths = p['mouth']
+    ears = []
+    if 'ears' in p:
+        g = grid(*p['ears'])
+        row, dx, dy = p['twitch']
+        flick = {((c + dx, r + dy) if c >= 11 and r < row else (c, r)): k for (c, r), k in g.items()}
+        ears = [lit(doubled(g), colors), lit(doubled(flick), colors)]
+    body = lit(doubled(grid(*p['body'])), colors)
+    tail = []
+    if 'tail' in p:
+        tail = [lit(chain(p['tail'], k / 8), colors) for k in range(8)]
+    elif 'flippers' in p:
+        tail = [lit((f := chain(p['flippers'], k / 8)) | {(43 - c, r): v for (c, r), v in f.items()}, colors) for k in range(8)]
+
+    def puff(w_, h_):  # the frog's throat, swelling: lit, its outline only a shade of the belly it swells from
+        cx, top = p['throat']
+        keys = {(c, r): 'W' for r in range(top, top + h_) for c in range(cx - w_ // 2, cx + w_ // 2)
+                if ((c + .5 - cx) / (w_ / 2)) ** 2 + ((r + .5 - top - h_ / 2) / (h_ / 2)) ** 2 <= 1}
+        return {q: v if q in keys else ramp(colors['W'])[1] for q, v in lit(keys, colors).items()}
+    return {'body': {v: bent(body, p['cut'], *POSES[v]) for v in POSES}, 'head': base, 'ears': ears, 'face': face,
+            'eyes': {(x0 + c, y + r): paint[k] for x0 in corners for c, r, k in shape},
+            'lids': [lids(range(mid), [(c, mid) for c, r, _ in shape if r == mid]),
+                     lids(range(h), [(0, h - 3), (w - 1, h - 3)] + [(c, h - 2) for c in range(1, w - 1)])],
+            'happy': lids(range(h), [(c, mid - 1) for c in range(1, w - 1)] + [(0, mid), (w - 1, mid)]),
+            'mouth': {k: sprite(v, colors, mx, my) for k, v in mouths.items()}, 'tail': tail,
+            'sac': [puff(12, 4), puff(16, 6)] if 'throat' in p else [],
+            'top': min(r for part in (base, body, *ears[:1]) for _, r in part)}
+
+
+class Motion:
+    """The CSS that moves a scene: tracks of (seconds, value) on a class, each value held until the next one
+    (step-end), so every pose lands on the LEDs. A track loops over its period or, `once`, plays one time; while
+    it plays, a class's later track wins over its earlier ones."""
+
+    def __init__(self, pn):
+        self.pn, self.anims, self.keys = pn, {}, []
+
+    def track(self, cls, period, seq, decl, once=False, fill='none', delay=0):
+        seq = sorted(seq, key=lambda kv: kv[0])
+        assert seq[0][0] == 0, cls
+        name, kf, last = f'{cls}-{len(self.keys)}', '', None
+        for t, v in seq:
+            if v != last:
+                kf += f'{num(100 * t / period)}%{{{decl(v)}}}'
+                last = v
+        self.keys.append(f'@keyframes {name}{{{kf}100%{{{decl(seq[-1][1] if once else seq[0][1])}}}}}')
+        self.anims.setdefault(cls, []).append(f'{name} {num(period)}s step-end' + (f' -{num(delay)}s' if delay else '')
+                                              + (f' 1 {fill}' if once else ' infinite'))
+
+    def move(self, cls, period, seq, **kw):
+        """seq of (t, (dx, dy)) in LEDs."""
+        self.track(cls, period, seq, lambda v: f'transform:translate({self.pn.px(v[0])}px,{self.pn.px(v[1])}px)', **kw)
+
+    def show(self, cls, ks, period, seq, **kw):
+        """seq of (t, k): of the variants cls{k} for k in ks, only k shows."""
+        for k in ks:
+            self.track(f'{cls}{k}', period, [(t, int(v == k)) for t, v in seq], lambda o: f'opacity:{o}', **kw)
+
+    def fade(self, cls, period, seq, **kw):
+        self.track(cls, period, seq, lambda o: f'opacity:{num(o)}', **kw)
+
+    def css(self):
+        return ''.join(f'.{c}{{animation:{",".join(a)}}}' for c, a in self.anims.items()) + ''.join(self.keys)
+
+
+def swing(n, beats):
+    """A tail's n frames over time, and the time they take: one frame every `beat` seconds through its swing
+    and `hold` more at each end of it, `count` times, for each (beat, hold, count); (0, hold, 0) rests `hold`
+    seconds at the middle."""
+    seq, t = [], 0.
+    for beat, hold, count in beats:
+        if not count:
+            seq.append((t, 0))
+            t += hold
+        for _ in range(count):
+            for k in range(n):
+                seq.append((t, k))
+                t += beat + (hold if k in (n // 4, 3 * n // 4) else 0)
+    return seq, t
+
+
+def blinks(*at):
+    """Eyelids (0 open, 1 half shut, 2 shut) blinking at each time, quick to close and slower to open; (t, 2)
+    blinks twice."""
+    seq = [(0, 0)]
+    for t in at:
+        t, times = t if isinstance(t, tuple) else (t, 1)
+        for i in range(times):
+            s = t + i * .32
+            seq += [(s, 1), (s + .04, 2), (s + .14, 1), (s + .21, 0)]
+    return seq
+
+
+def breaths(t0, t1, period=3.6):
+    """Poses for calm breathing from t0 to t1: in 0.9 s into each breath, the head riding the chest, out 1.6 s later."""
+    seq, t = [], t0
+    while t < t1 - .01:
+        seq += [(t, 'rest', (0, 0))] + ([(t + .9, 'in', (0, -1)), (t + 2.5, 'rest', (0, 0))] if t + 2.5 <= t1 else [])
+        t += period
+    return seq
+
+
+def hop(t0, dur, height, x0=0, x1=0, fps=24):
+    """A jump from t0: up and down a parabola `height` LEDs high in `dur` seconds while moving from x0 to x1,
+    sampled `fps` times a second: ([(t, x)], [(t, y)])."""
+    n = max(2, round(dur * fps))
+    return ([(t0 + i / n * dur, round(x0 + (x1 - x0) * i / n)) for i in range(n + 1)],
+            [(t0 + i / n * dur, -round(4 * height * i / n * (1 - i / n))) for i in range(n + 1)])
+
+
+LOOK = (11.3, [(0, (0, 0)), (2.4, (1, 0)), (2.46, (2, 0)), (4.1, (1, 0)), (4.16, (0, 0)), (6.3, (-1, 0)), (6.36, (-2, 0)),
+               (7.6, (-2, -1)), (8.2, (-1, 0)), (8.26, (0, 0)), (9.7, (0, -1)), (10.5, (0, 0))])  # a look around, now and then
+BLINK = (9.7, blinks(1.4, (3.9, 2), 7.8))  # at uneven gaps, one of them double
+TWITCH = (8.9, [(0, 0), (3.1, 1), (3.22, 0), (3.36, 1), (3.48, 0)])
+CROAK = (5.3, [(0, 0), (1, 1), (1.1, 2), (1.5, 1), (1.6, 0), (1.9, 1), (2, 2), (2.4, 1), (2.5, 0)])
+SNIFF = (2.9, [(0, 'shut'), (.4, 'sniff'), (.5, 'shut'), (.6, 'sniff'), (.7, 'shut'), (.8, 'sniff'), (.9, 'shut')])
+SCENE = (6, 6)  # the pet's top left on the pet card; its props play in columns 46-72, the floor is row 53
+
+
+@functools.lru_cache(maxsize=36)
+def pet_scene(kind, action):
+    """The pet doing `action` ('feed', 'pet', 'play', 'choose' or 'sleep') with its props: (svg, css). Every part
+    keeps its own clock so the scene never visibly loops: blinks (some double), the tail, the ears, breaths and
+    looks around; a reaction comes round every few seconds with anticipation before it and follow-through after
+    it, and choosing a pet plays its entrance once, then the pet idles."""
+    p, a, pn = PETS[kind], pet_art(kind), pet_card()
+    m, (cx, cy), hide = Motion(pn), SCENE, []
+    jump = min(8, a['top'] + cy)  # how high the pet can go before it leaves the card
+
+    def draw(cells, x=0, y=0):
+        return pn.draw({(c + cx + x, r + cy + y): v for (c, r), v in cells.items()})
+
+    def flip(cls, variants, period, seq, at=(0, 0), **kw):
+        """The variants as groups cls0, cls1... (an empty one draws nothing): the first shows when nothing
+        moves, seq (t, k) says which shows."""
+        ks = [k for k, v in enumerate(variants) if v]
+        if len({k for _, k in seq}) > 1:
+            m.show(cls, ks, period, seq, **kw)
+            hide.extend(f'{cls}{k}' for k in ks if k)
+        return ''.join(f'<g class="{cls}{k}">{draw(variants[k], *at)}</g>' for k in ks)
+
+    def gaze(period, seq, **kw):  # where the face looks, as far as this pet's face can go
+        m.move('fc', period, [(t, (max(-reach, min(reach, dx)), dy)) for t, (dx, dy) in seq], **kw)
+    reach = p.get('look', 2)
+    period = {'feed': 10, 'pet': 9, 'play': 6.6, 'choose': 2.6, 'sleep': 4.8}[action]
+    once = action == 'choose'
+    px = py = face = happy = mouth = sac = None
+    props = ''
+    if action == 'sleep':
+        poses = [(0, 'rest', (0, 1)), (1.3, 'in', (0, 0)), (3.3, 'rest', (0, 1))]
+        for i in range(3):  # Zs rise from the head, drift and fade
+            props += f'<g class="z{i}">{draw(text("Z", 0, 0, MUTED, "5x7" if i == 1 else "3x5", decor=True), 45, 9)}</g>'
+            m.move(f'z{i}', 3.6, [(0, (0, 0))] + [(.3 * k, (k // 3, -k)) for k in range(1, 10)], delay=1.2 * i)
+            m.fade(f'z{i}', 3.6, [(0, 1), (2.1, .6), (2.4, .3), (2.7, 0)], delay=1.2 * i)
+    elif action == 'feed' and p['food'] == 'fly':  # the frog: a fly buzzes in, the tongue gets it, a gulp
+        poses = breaths(0, 2.3) + [(2.3, 'in', (0, -1)), (2.84, 'rest', (0, 0)), (3, 'in', (0, -1)), (3.3, 'rest', (0, 0))]
+        poses += breaths(4.3, period)
+        mouth = [(0, 'shut'), (2.55, 'open'), (2.84, 'shut'), (3.6, 'lick'), (3.75, 'shut')]
+        sac = [(0, 0), (2.95, 1), (3.05, 2), (3.35, 1), (3.45, 0)]
+        happy = [(0, 0), (3.5, 1), (4.2, 0)]
+        path = [(round(i * .08, 2), (round(68 - 20 * s + 3 * math.sin(9 * s)), round(9 + 4 * math.sin(5 * s) + 2 * math.sin(13 * s))))
+                for i in range(31) for s in [i / 30]]
+        face = (period, [(t, (int(x > 40), -int(y < 8))) for t, (x, y) in path] + [(2.8, (0, 0)), (5.6, (-1, 0)), (6.6, (0, 0)),
+                                                                                   (8, (1, -1)), (8.8, (0, 0))])
+        fly, colors = FOOD['fly']
+        props += f'<g class="fd">{flip("ff", [sprite(f, colors) for f in fly], .1, [(0, 0), (.05, 1)], at=(45, 8))}</g>'
+        m.move('fd', period, [(t, (x - 48, y - 10)) for t, (x, y) in path + [(2.66, (48, 10)), (2.74, (35, 14)), (2.8, (22, 18))]]
+               + [(2.84, (-99, 0))])  # caught: it rides the tongue back, then it is gone
+        tongue = [{(round(22 + (x - 22) * i / 40) + dc, round(18 + (y - 18) * i / 40) + dr): p['colors']['T']
+                   for i in range(41) for dc in (0, 1) for dr in (0, 1)} for x, y in ((35, 14), (48, 10))]
+        props += flip('tg', [{}, *tongue], period, [(0, 0), (2.62, 1), (2.66, 2), (2.74, 1), (2.8, 0)])
+    elif action == 'feed':  # the food drops in front of the pet, which leans down and eats it in three bites
+        poses = [(0, 'rest', (0, 0)), (.9, 'in', (0, -1)), (1.2, 'rest', (0, 0)), (1.3, 'crouch', (0, 5)), (1.38, 'crouch', (0, 8)),
+                 (1.46, 'crouch', (0, 10))]
+        mouth = [(0, 'shut')]
+        for b in (1.6, 2.6, 3.6):
+            poses += [(b, 'crouch', (0, 11)), (b + .1, 'crouch', (0, 12)), (b + .22, 'crouch', (0, 10))]
+            mouth += [(b, 'open'), (b + .22, 'shut')]
+            for i in range(4):  # chewing
+                poses.append((b + .36 + .14 * i, 'crouch', (0, 11 - i % 2)))
+                mouth.append((b + .36 + .14 * i, 'shut' if i % 2 else 'open'))
+        poses += [(4.5, 'crouch', (0, 7)), (4.58, 'rest', (0, 3)), (4.66, 'rest', (0, 1)), (4.74, 'rest', (0, 0))] + breaths(5.8, period)
+        mouth += [(4.9, 'lick'), (5.05, 'shut'), (5.2, 'lick'), (5.4, 'shut')]
+        happy = [(0, 0), (4.95, 1), (5.7, 0)]
+        face = (period, [(0, (0, 0)), (.3, (1, 1)), (.9, (0, 0)), (1.3, (0, 1)), (4.6, (0, 0)), (5, (0, -1)), (5.6, (0, 0)),
+                         (6.8, (2, 0)), (7.9, (0, 0)), (8.6, (-2, 0)), (9.3, (0, 0))])
+        food, colors = FOOD[p['food']]
+        bites = [lit(doubled(grid(0, f), 9, 5), colors) for f in food] + [{}]
+        props += f'<g class="fd">{flip("ff", bites, period, [(0, 0), (1.82, 1), (2.82, 2), (3.82, 3)], at=(13, 37))}</g>'
+        m.move('fd', period, [(0, (0, -56))] + [(t, (0, y)) for t, y in hop(-.6, 1.2, 56)[1] if t > 0]  # falling from above, a bounce
+               + [(.62, (0, -3)), (.67, (0, -4)), (.72, (0, -3)), (.8, (0, 0))])
+    elif action == 'pet':  # eyes shut with pleasure, leaning into three strokes, purring, hearts
+        poses = [(0, 'rest', (0, 0)), (.25, 'in', (0, -1))]
+        for s in (.45, 1.35, 2.25):
+            poses += [(s, 'rest', (0, 1)), (s + .15, 'rest', (-1, 2)), (s + .45, 'rest', (-1, 1)), (s + .7, 'rest', (0, 0))]
+        poses += [(3.3, 'rest', (1, 0)), (3.38, 'rest', (-1, 0)), (3.46, 'rest', (1, 0)), (3.54, 'rest', (0, 0))] + breaths(3.8, period)
+        happy = [(0, 0), (.35, 1), (3.2, 0)]
+        px = [(0, (0, 0))] + [(t0 + .07 * i, (i % 2, 0)) for t0 in (.6, 1.5, 2.4) for i in range(9)]  # the purr, in bursts
+        face = (period, [(0, (0, 0)), (.25, (0, -1)), (.45, (0, 0)), (5.2, (2, 0)), (6.4, (0, 0)), (7.3, (-2, 0)), (8.1, (0, 0))])
+        heart = {(c, r): {'R': p['accent'], 'H': shaded(p['accent'], 1.6)}[k] for r, ln in enumerate(HEART) for c, k in enumerate(ln) if k != '.'}
+        for i, (t0, x, y) in enumerate(((.6, 44, 16), (1.4, 50, 12), (2.2, 43, 9))):
+            props += f'<g class="h{i}">{draw(heart, x, y)}</g>'
+            m.move(f'h{i}', period, [(0, (0, 0))] + [(t0 + .13 * k, ((k // 3) % 2 * (1 if i % 2 else -1), -k)) for k in range(14)]
+                   + [(t0 + 1.82, (0, 0))])
+            m.fade(f'h{i}', period, [(0, 0), (t0, 1), (t0 + 1.1, .6), (t0 + 1.4, .3), (t0 + 1.7, 0)])
+    elif action == 'play':  # a ball bouncing beside the pet, which watches it and jumps after it, small then big
+        poses = [(0, 'rest', (0, 0)), (.5, 'in', (0, -1)), (1, 'rest', (0, 0)),
+                 (1.25, 'crouch', (0, 3)), (1.5, 'stretch', (0, -2)), (1.6, 'rest', (0, 0)), (2, 'land', (0, 4)), (2.1, 'crouch', (0, 3)),
+                 (2.18, 'rest', (0, 0)), (2.6, 'in', (0, -1)), (3.1, 'rest', (0, 0)),
+                 (3.3, 'crouch', (0, 3)), (3.85, 'stretch', (0, -2)), (3.95, 'rest', (0, 0)), (4.45, 'land', (0, 4)), (4.55, 'crouch', (0, 3)),
+                 (4.63, 'rest', (0, 0)), (5.5, 'in', (0, -1)), (6.2, 'rest', (0, 0))]
+        py = [(0, (0, 0))] + [(t, (0, y)) for t, y in hop(1.5, .5, min(5, jump))[1] + hop(3.85, .6, jump)[1]]
+        px = [(0, (0, 0)), (3.4, (1, 0)), (3.48, (0, 0)), (3.56, (-1, 0)), (3.64, (0, 0)), (3.72, (1, 0)), (3.8, (0, 0))]  # a wiggle first
+        happy = [(0, 0), (4.6, 1), (5.2, 0)]
+        face = (1.1, [(0, (2, 1)), (.2, (2, 0)), (.38, (2, -1)), (.72, (2, 0)), (.9, (2, 1))])  # following the ball
+        ball = lit(doubled(grid(0, BALL), 6, 6), {'Y': '#FFD866', 'R': RED})
+        spins = [ball]
+        for _ in range(3):  # a quarter turn at a time
+            spins.append({(11 - r, c): v for (c, r), v in spins[-1].items()})
+        props += (f'<g class="bl"><g class="bs">{flip("bn", spins, .56, [(0, 0), (.14, 1), (.28, 2), (.42, 3)], at=(55, 34))}</g>'
+                  f'<g class="bq">{draw(bent(ball, 7, -2, 2, 6), 55, 34)}</g></g>')  # squashed as it hits the floor
+        m.move('bl', 1.1, [(t, (0, y)) for t, y in hop(0, 1.1, 16)[1]])
+        m.fade('bs', 1.1, [(0, 0), (.06, 1)])
+        m.fade('bq', 1.1, [(0, 1), (.06, 0)])
+        hide.append('bq')
+    else:  # choose: the pet hops in from the left, lands, and shows off
+        x0 = -64
+        px, py, poses = [(0, (x0, 0))], [(0, (0, 0))], [(0, 'crouch', (0, 3))]
+        for t0, xa, xb in ((.12, x0, x0 * 2 // 3), (.66, x0 * 2 // 3, x0 // 3), (1.2, x0 // 3, 0)):
+            xs, ys = hop(t0, .4, min(6, jump), xa, xb)
+            px += [(t, (x, 0)) for t, x in xs]
+            py += [(t, (0, y)) for t, y in ys]
+            poses += [(t0 - .1, 'crouch', (0, 3)), (t0, 'stretch', (0, -2)), (t0 + .08, 'rest', (0, 0)), (t0 + .4, 'land', (0, 4)),
+                      (t0 + .48, 'crouch', (0, 3)), (t0 + .54, 'rest', (0, 0))]
+        poses += [(1.95, 'in', (0, -1)), (2.4, 'rest', (0, 0))]
+        happy = [(0, 0), (1.95, 1), (2.5, 0)]
+        face = (period, [(0, (2, 0)), (1.7, (0, 0))])
+        star = {(c, r): {'C': p['accent'], 'W': '#FFFFFF'}[k] for r, ln in enumerate(SPARKLE) for c, k in enumerate(ln) if k != '.'}
+        for i, (t0, x, y) in enumerate(((1.9, -3, 10), (2, 46, 2), (2.1, 48, 24))):
+            props += f'<g class="s{i}">{draw(star, x, y)}</g>'
+            m.fade(f's{i}', period, [(0, 0), (t0, 1), (t0 + .3, .5), (t0 + .45, 0)], once=True, fill='both')
+    entrance = dict(once=True) if once else {}
+    used = sorted({v for _, v, _ in poses} | ({'rest', 'in'} if once else set()), key=list(POSES).index)
+    if once:  # first the clocks the pet keeps after its entrance: the entrance's own tracks come later and win while it plays
+        idle = breaths(0, 3.6)
+        m.show('bd', range(len(used)), 3.6, [(t, used.index(v)) for t, v, _ in idle])
+        m.move('hd', 3.6, [(t, o) for t, _, o in idle])
+        if 'flippers' in p:
+            m.move('sd', 3.6, [(t, (0, -POSES[v][0])) for t, v, _ in idle])
+        gaze(*LOOK)
+    # the pet, back to front
+    svg = ''
+    if a['tail']:
+        wag = p['wag'] if action != 'sleep' else [(b * 2, h * 3, n) for b, h, n in p['wag']]  # lazier asleep
+        seq, span = swing(len(a['tail']), wag)
+        tail = flip('tl', a['tail'], span, seq)
+        svg += f'<g class="sd">{tail}</g>' if 'flippers' in p else tail  # flippers ride the shoulders, a tail stays put
+    svg += flip('bd', [a['body'][v] for v in used], period, [(t, used.index(v)) for t, v, _ in poses], **entrance)
+    if a['sac']:
+        svg += flip('sc', [{}, *a['sac']], *((period, sac) if sac else CROAK))
+    head = flip('er', a['ears'], *TWITCH) if a['ears'] and not p.get('front_ears') else ''
+    head += draw(a['head'])
+    if a['ears'] and p.get('front_ears'):
+        head += flip('er', a['ears'], *TWITCH)
+    said = {v for _, v in mouth} if mouth else {'shut', 'sniff'}  # sniffing is the bunny's idle
+    mouths = [k for k in a['mouth'] if k in said]  # 'shut' first: the mouth when nothing moves
+    clock, chew = (period, mouth) if mouth else SNIFF if 'sniff' in mouths else (1, [(0, 'shut')])
+    face_svg = draw(a['face']) + draw(a['eyes']) + flip('mo', [a['mouth'][k] for k in mouths], clock,
+                                                        [(t, mouths.index(v)) for t, v in chew])
+    if action == 'sleep':
+        face_svg += draw(a['lids'][1])
+    else:
+        face_svg += flip('ld', [{}, *a['lids']], *BLINK)
+    if happy:
+        face_svg += f'<g class="hp">{draw(a["happy"])}</g>'
+        m.fade('hp', period, happy, once=once, fill='both')
+        if action != 'pet':
+            hide.append('hp')
+    sleepy = f' transform="translate(0 {pn.px(1)})"' if action == 'sleep' else ''  # asleep, the face droops
+    head += f'<g clip-path="url(#pf)"><g class="fc"{sleepy}>{face_svg}</g></g>'
+    svg += f'<g class="hd">{head}</g>'
+    m.move('hd', period, [(t, o) for t, _, o in poses], **entrance)
+    if 'flippers' in p:
+        m.move('sd', period, [(t, (0, -POSES[v][0])) for t, v, _ in poses], **entrance)
+    if face:
+        gaze(*face, **(entrance if face[0] == period else {}))
+    elif action != 'sleep':
+        gaze(*LOOK)
+    # its shadow on the floor shrinks as it rises
+    shadow = [{(c, 47): '#1E1813' for c in range(22 - w, 22 + w)} for w in (17, 12, 7)]
+    svg = flip('sh', shadow, period, [(t, 0 if y == 0 else 1 if y >= -3 else 2) for t, (_, y) in py or [(0, (0, 0))]], **entrance) + \
+        f'<g class="py">{svg}</g>'
+    for cls, seq in (('py', py), ('px', px)):
+        if seq:
+            m.move(cls, period, seq, **entrance)
+    clip = f'<clipPath id="pf"><path d="{pn.runs([(c + cx, r + cy) for c, r in a["head"]])}"/></clipPath>'
+    style = (','.join(f'.{c}' for c in hide) + '{opacity:0}' if hide else '') + m.css()
+    return f'{clip}<g class="px">{svg}</g>{props}', style
+
+
 def pet_panel(state=None, now=None):
     """The live top of the pet card, laid out like a project card: the pet, its copy and a stats box. One image,
     served by api/pet.py: it loads below the fold, where its arrival moves nothing in view. The buttons below it
@@ -1332,45 +1820,8 @@ def pet_panel(state=None, now=None):
     awake = last and now - dt.datetime.fromisoformat(last['at']) <= dt.timedelta(days=2)
     kind = state['chosen'] if state['chosen'] in PETS else 'cat'
     pet, name = PETS[kind], PETS[kind]['name']
-    pn = pet_card()
-    cx, cy, left = 6, 6, 76  # the pet, 52x48 LEDs, level with the title like the icons; its props play in columns 46-72
-    poses = [scale2x(compose(pet['body'], layer(f))) for f in pet['frames']]  # whole poses: only one shows at a time
-    closed = scale2x(compose(pet['body'], layer(pet['frames'][0]), layer(pet['shut'])))
-    lids = {(cx + c, cy + r): pet['colors'][k] for r, line_ in enumerate(closed) for c, k in enumerate(line_)
-            if k != poses[0][r][c] and k != '.'}  # the closed eyes, drawn over either pose
-    pose, css = frames('pose', [pn.draw(sprite(p_, pet['colors'], cx, cy)) for p_ in poses], 1.2)
-    floor = pn.draw(hline(6, 72, 53, RULE))
-    action = last['action'] if awake else 'sleep'
-    if action in ('pet', 'choose', 'sleep'):  # eyes shut, with pleasure or asleep
-        eyes = pn.draw(lids)
-    else:
-        eyes = f'<g class="blink">{pn.draw(lids)}</g>'
-        css += '.blink{opacity:0;animation:blink 4s step-end infinite}@keyframes blink{0%{opacity:0}92%{opacity:1}96%,100%{opacity:0}}'
-    up, step = pn.px, 'animation-timing-function:steps(4)'
-    css += {  # the pet itself reacts: head down to the food, a happy wiggle, a jump with the ball, slow breaths
-        'feed': f'.petbody{{animation:eat .5s step-end infinite}}@keyframes eat{{50%{{transform:translateY({up(2)}px)}}}}',
-        'pet': f'.petbody{{animation:wiggle .4s step-end infinite}}@keyframes wiggle{{50%{{transform:translateX({up(1)}px)}}}}',
-        'choose': f'.petbody{{animation:wiggle .4s step-end infinite}}@keyframes wiggle{{50%{{transform:translateX({up(1)}px)}}}}',
-        'play': (f'.petbody{{animation:jump 1s infinite}}@keyframes jump{{0%,100%{{transform:none;{step}}}'
-                 f'50%{{transform:translateY(-{up(8)}px);{step}}}}}'),
-        'sleep': f'.petbody{{animation:breathe 3s step-end infinite}}@keyframes breathe{{50%{{transform:translateY({up(1)}px)}}}}',
-    }[action]
-    if action == 'feed':
-        food, colors = FOOD[pet['food']]
-        prop, prop_css = frames('food', [pn.draw(sprite(f, colors, 52, 43, 2)) for f in food], 3)
-    elif action in ('pet', 'choose'):
-        prop = ''.join(f'<g class="heart" style="animation-delay:{i * .8}s">'
-                       f'{pn.draw(sprite(HEART, {"R": pet["accent"]}, 46 + i * 8, 12 + (i % 2) * 6, 1))}</g>' for i in range(3))
-        prop_css = (f'.heart{{animation:heart 2.4s steps(8) infinite}}'
-                    f'@keyframes heart{{from{{transform:translateY({pn.px(8)}px);opacity:1}}to{{transform:none;opacity:0}}}}')
-    elif action == 'play':
-        prop = f'<g class="ball">{pn.draw(sprite(BALL, {"Y": "#FFD866", "R": RED}, 56, 40, 2))}</g>'
-        prop_css = (f'.ball{{animation:ball 1s infinite}}@keyframes ball{{0%,100%{{transform:none;animation-timing-function:steps(6)}}'
-                    f'50%{{transform:translateY(-{pn.px(24)}px);animation-timing-function:steps(6)}}}}')
-    else:
-        prop = ''.join(f'<g class="z" style="animation-delay:{i}s">{pn.draw(text("Z", 46 + i * 6, 14 - i * 5, MUTED, "3x5", 1 + i % 2))}</g>'
-                       for i in range(3))
-        prop_css = '.z{animation:z 3s step-end infinite}@keyframes z{0%,66%{opacity:1}67%,100%{opacity:0}}'
+    pn, left = pet_card(), 76
+    scene, css = pet_scene(kind, last['action'] if awake else 'sleep')  # the same for every view of this state: cached
     verb, when = visit_verb(last), last and ago(last['at'], now)
     did = {'feed': 'FED', 'pet': 'PETTED', 'play': 'PLAYED', 'choose': 'PICKED'}[last['action']] if last else ''  # the pet's name is the title
     foot = f'LAST VISITOR: {did} · {when}' if last else 'NO VISITORS YET. BE THE FIRST!'
@@ -1391,8 +1842,8 @@ def pet_panel(state=None, now=None):
              if last else 'No visits yet.')
     summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
                f"played with {state['play']} times. {visit}")
-    art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    return columns(pn, [], [summary], art_, css + prop_css, bottom=PET_CUT)[0]
+    art_ = pn.draw(hline(6, 72, 53, RULE)) + scene + pn.draw(info)  # the floor first: the pet's shadow falls on it
+    return columns(pn, [], [summary], art_, css, bottom=PET_CUT)[0]
 
 
 def pet_button(i, pressed=False):
@@ -1419,16 +1870,18 @@ def head_tile(i):
 
 
 def pet_head(i, pressed=False):
-    """The switch's tile for the i-th pet in its slice of the pet card: the head and its first pose, cropped
-    to the head. Pressed, the tile lights up in the pet card's pink."""
+    """The switch's tile for the i-th pet in its slice of the pet card: its head at grid size, lit like the
+    pet, with its small face, cropped to the head. Pressed, the tile lights up in the pet card's pink."""
     other = PETS[list(PETS)[i]]
-    c, half, h = head_tile(i) + (other['head'],)
+    (c, half), h = head_tile(i), other['tile']
     tone, edge, fill = (PET, .7, .16) if pressed else (MUTED, .35, .03)
     cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - half, c + half) or r in (84, 102) else fill))
              for x in range(c - half, c + half + 1) for r in range(84, 103) if not (x in (c - half, c + half) and r in (84, 102))}
-    for rows in (other['body'], layer(other['frames'][0])):
-        cells |= sprite([ln[:18] for ln in rows[:h]], other['colors'], c - 9, 101 - h)
-    return cells
+    ears = grid(*other['ears']) if 'ears' in other else {}
+    keys = grid(*other['body']) | ({} if other.get('front_ears') else ears) | grid(*other['head'])
+    keys |= ears if other.get('front_ears') else {}
+    colors = other['colors'] | {k.lower(): v for k, v in other['colors'].items()}
+    return cells | {(c - 11 + x, 101 - h + r): v for (x, r), v in lit({q: k for q, k in keys.items() if q[1] < h}, colors).items()}
 
 
 def pet_press(do, kind=None):
@@ -1590,6 +2043,11 @@ def build_all():
     write('pet-switch', controls[3:])
     for make in (lambda: hero(1), pet_panel):  # served live by api/, drawn here for the contrast check
         make()
+    for kind in PETS:  # api/pet.py draws every scene: each one builds, and bending a body never lifts its feet
+        bodies = pet_art(kind)['body'].values()
+        assert len({max(r for _, r in b) for b in bodies}) == 1, kind
+        for action in (*PET_ACTIONS, 'sleep'):
+            pet_scene(kind, action)
     low = {c: round(contrast(c, BG), 2) for c in INK if contrast(c, BG) < 4.5}
     assert not low, f'text below WCAG AA 4.5:1 on {BG}: {low}'
     print(f'{len(panels)} panels; text contrast >= 4.5:1 ({", ".join(f"{c} {contrast(c, BG):.1f}" for c in sorted(INK))})')
