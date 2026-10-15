@@ -1194,23 +1194,57 @@ def projects_mark(col, row, size=16):
     return cells
 
 
+# Cadran's press, as LED badges on a strip under its card, each its own image so it links to its page:
+# (accent, logo, logo palette, small line, line, link, alt). The brands' own badges would break the panel.
+BADGES = [('#FF6154', ['...OOOOO...', '.OOOOOOOOO.', '.OOOWWWWOO.', 'OOOOWOOOWOO', 'OOOOWOOOWOO', 'OOOOWWWWOOO',
+                       'OOOOWOOOOOO', 'OOOOWOOOOOO', '.OOOWOOOOO.', '.OOOOOOOOO.', '...OOOOO...'],
+           {'O': '#FF6154', 'W': CREAM}, 'FEATURED ON', 'PRODUCT HUNT',
+           'https://www.producthunt.com/products/cadran?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-cadran',
+           'Cadran, featured on Product Hunt'),
+          ('#FC60A8', ['...........', '...........', 'PPPPPPPPPPP', 'PKKKKPKKKKP', 'PKHKKPKHKKP', 'PKKKKPKKKKP',
+                       '.PKKP.PKKP.', '..PP...PP..', '...........', '...........', '...........'],
+           {'P': '#FC60A8', 'K': '#4A1A38', 'H': CREAM}, 'MENTIONED IN', 'AWESOME-MAC',
+           'https://github.com/jaywcjlove/awesome-mac/tree/master?tab=readme-ov-file#general-tools',
+           'Cadran, mentioned in awesome-mac')]
+BADGE_CUTS = (128, 216)  # between the two badges, and after the second, level with the device column above
+
+
+def badges(pn):
+    """Cadran's badges: like the pet's buttons (a dim fill, a brighter edge, the corners cut), 85x17 LEDs from the
+    copy's column, a logo, two lines in the text inks and the external-link arrow in the brand's colour. They start
+    four rows into the strip: the download count ends at the band's last row, just over the second badge's end."""
+    cells, t = {}, 4
+    for (accent, logo, palette, small, big, _, _), a in zip(BADGES, (40, 131)):
+        b = a + 84
+        assert max(text_width(small, '3x5'), text_width(big, '3x5')) <= b - 8 - 4 - (a + 19), small  # 4 clear before the arrow
+        cells |= {(c, r): hexc(mix(rgb(BG), rgb(accent), .5 if c in (a, b) or r in (t, t + 16) else .14))
+                  for c in range(a, b + 1) for r in range(t, t + 17) if not (c in (a, b) and r in (t, t + 16))}
+        cells |= (sprite(logo, palette, a + 4, t + 3) | text(small, a + 19, t + 3, MUTED, '3x5') | text(big, a + 19, t + 9, CREAM, '3x5')
+                  | text('↗', b - 8, t + 6, accent, '3x5'))
+    assert 131 + 84 < BADGE_CUTS[1] and 40 + 84 < BADGE_CUTS[0] < 131, 'a cut runs through a badge'
+    return [alt for *_, alt in BADGES] + ['Visit cadranapp.com'], pn.draw(cells), ''
+
+
 def projects_card(downloads=None, now=None, only=None):
-    """The projects as one card in four bands: the heading, then Cadran, Lift and LED Board. Each band is
-    an image of its own so README.md can link it; api/cadran.py and api/lift.py serve theirs live (the
-    download count, the clocks), the build writes the other two. The live bands come as (margin, live
-    part), see columns. `only` draws just that band."""
-    pn = Panel(284, 32 + 3 * 76)
+    """The projects as one card: the heading, then Cadran with its badges under it, Lift and LED Board. Each band
+    is an image of its own (or a line of them) so README.md can link it; api/cadran.py and api/lift.py serve theirs
+    live (the download count, the clocks), the build writes the rest. The live bands come as (copy, live part),
+    the badges as (Product Hunt, awesome-mac, the rest), see columns. `only` draws just that band, numbered as
+    listed below: the badges come last so the live bands keep their numbers."""
+    pn = Panel(284, 32 + 72 + 31 + 76 + 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | text('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
-    makers = [lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''),
-              lambda b: cadran(b, downloads, now), lambda b: lift(b, None, now), lambda b: board(b)]
-    tops = [0, 32, 108, 184, 260]
+    bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
+        (lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''), 0, 32, None),
+        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 135, 211, DEVICE_LIVE),
+        (lambda b: board(b), 211, None, None), (badges, 104, 135, BADGE_CUTS)]
     out = []
-    for i, make in enumerate(makers):
+    for i, (make, top, bottom, cuts) in enumerate(bands):
         if only is None or i == only:
-            alt, body, css = make(pn.at_row(tops[i]))
-            band = dict(top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
-            out += columns(pn, DEVICE_LIVE, [alt, alt], body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
+            alt, body, css = make(pn.at_row(top))
+            alts = alt if isinstance(alt, list) else [alt] * (len(cuts or ()) + 1)
+            band = dict(top=top or None, bottom=bottom)
+            out += columns(pn, cuts, alts, body, css, **band) if cuts else slices(pn, alts, body, css, **band)
     return out
 
 
@@ -2206,7 +2240,8 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_text, _, lift_copy, _, led_board = projects_card(now=STILL)
+    heading, cadran_text, _, lift_copy, _, led_board, *badge_strip = projects_card(now=STILL)
+    write('projects-2-badge', badge_strip)
     (IMG / 'projects-1.svg').write_text(heading)
     for name, svg in (('projects-2-copy', cadran_text), ('projects-3-copy', lift_copy)):
         (IMG / f'{name}.svg').write_text(svg)
