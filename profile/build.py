@@ -24,6 +24,7 @@ import sys
 from pathlib import Path
 
 OUT = Path(__file__).parent
+IMG = OUT / 'img'  # what README.md shows; the SVGs beside build.py belong to the README before ?v=2, until it goes
 TODAY = dt.date.today()
 
 # --- fonts: Crypto LED Board src/led/font5x7.ts, font3x5.ts, font7x9.ts --------------
@@ -102,7 +103,7 @@ FONTS = {'5x7': FONT_5X7, '3x5': FONT_3X5, '7x9': FONT_7X9}
 
 BG, OFF = '#030201', '#16110C'
 CREAM, MUTED, RULE = '#FFF1D6', '#BDB3A1', '#3A3128'   # RULE is decoration only, never text
-CADRAN, LIFT, BOARD, PET = '#FF7A9A', '#7FA6FF', '#FF6A00', '#FF8FB0'
+CADRAN, LIFT, BOARD, PET = '#FF7B00', '#7FA6FF', '#FF6A00', '#FF8FB0'  # Cadran: cadranapp.com's --color-accent
 GREEN, RED = '#089981', '#F23645'
 INK = set()  # every colour used for text, checked against WCAG AA at the end
 
@@ -345,7 +346,10 @@ def columns(pn, cuts, titles, body, style='', defs='', top=None, bottom=None):
 
 HERO_LIVE = (146, 239)  # the counter's columns in the hero's top band: all that depends on the visitor
 HERO_BAND = 25  # the top band ends above the photo's light
-DEVICE_LIVE = (216, 284)  # project bands: the device and its live clock; the copy and the card's right edge stay static
+DEVICE_LIVE = (216,)  # project bands: the device, its live clock and the card's right edge; the copy stays static
+# Every piece of a line has to be wide for its height: Chrome rounds widths to 1/64 px and a piece's height is its width
+# times its height-to-width ratio, so a tall, narrow strip ends up a pixel row off from its neighbours.
+LEGACY = dict(device=(216, 284), legacy=True)  # what api/ serves without ?v=2: the README before it, pink Cadran, edge strips
 
 
 SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED panel, 6 LEDs clear of the cuts
@@ -354,7 +358,7 @@ SLOTS = [(6, 86), (99, 184), (197, 280)]  # one link per third of a 284-LED pane
 def write(name, out):
     """One SVG, or the slices from `slices` as name-1.svg, name-2.svg..."""
     for i, svg in enumerate([out] if isinstance(out, str) else out):
-        (OUT / (f'{name}.svg' if isinstance(out, str) else f'{name}-{i + 1}.svg')).write_text(svg)
+        (IMG / (f'{name}.svg' if isinstance(out, str) else f'{name}-{i + 1}.svg')).write_text(svg)
 
 
 # --- motion (CSS only) ----------------------------------------------------------------
@@ -455,7 +459,7 @@ def outline(col, row, size, color, radius=.22):
 # --- titles: pre-rendered by `build.py titles` so CI needs neither Pillow nor the font ----
 
 TITLE_CAPS = {'MY PROJECTS': 8}  # section headings sit a size below the names (cap height 14)
-TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'MY PROJECTS', 'GITHUB']
+TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'MY PROJECTS', 'GITHUB']
 
 
 def big(s, col, row, color, gap=2, size='counter'):
@@ -531,7 +535,7 @@ def board_icon(col, row, size=24):
 # over the body, `shut` the closed eyes; both are {row: (column, run)}, see `layer`. `head` is how many rows
 # the switch under the pet card shows.
 PETS = {
-    'cat': {'name': 'BYTE', 'noun': 'CAT', 'food': 'fish', 'head': 14,
+    'cat': {'name': 'BYTE', 'noun': 'CAT', 'food': 'fish', 'head': 14, 'accent': '#F0A04B',
         'colors': {'O': '#5C2E14', 'G': '#F0A04B', 'S': '#C8692A', 'W': '#FFF1D6', 'P': '#FF9DB4', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#8BE38F'},
         'body': [
                  '..O............O..',
@@ -561,7 +565,7 @@ PETS = {
         'frames': [{12: (19, 'OO'), 13: (18, 'OSSO'), 14: (19, 'OGO'), 15: (19, 'OGO'), 16: (19, 'OGO'), 17: (19, 'OGO'), 18: (18, 'OGO'), 19: (17, 'OGO'), 20: (17, 'GO'), 21: (16, 'OO')},
                    {12: (20, 'OO'), 13: (19, 'OSSO'), 14: (20, 'OGO'), 15: (20, 'OGO'), 16: (19, 'OGO'), 17: (19, 'OGO'), 18: (18, 'OGO'), 19: (17, 'OGO'), 20: (17, 'GO'), 21: (16, 'OO')}],
         'shut': {7: (4, 'GGGG..GGGG'), 8: (4, 'KGGK..KGGK'), 9: (4, 'GKKG..GKKG'), 10: (4, 'GGGG..GGGG')}},
-    'dog': {'name': 'PIXEL', 'noun': 'DOG', 'food': 'bone', 'head': 12,
+    'dog': {'name': 'PIXEL', 'noun': 'DOG', 'food': 'bone', 'head': 12, 'accent': '#E3B47A',
         'colors': {'O': '#4A2A14', 'G': '#E3B47A', 'S': '#9C5F2E', 'W': '#FFF1D6', 'P': '#FF7A9A', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#4C8DFF', 'Y': '#FFD866'},
         'body': [
                  '...OOOOOOOOOOOO...',
@@ -591,7 +595,7 @@ PETS = {
         'frames': [{12: (18, 'OO'), 13: (17, 'OGGO'), 14: (16, 'OGGO'), 15: (16, 'OGO')},
                    {13: (17, 'OOO'), 14: (16, 'OGGGO'), 15: (16, 'OOO')}],
         'shut': {5: (6, 'GG..GG'), 6: (6, 'KK..KK')}},
-    'bunny': {'name': 'NIBBLE', 'noun': 'BUNNY', 'food': 'carrot', 'head': 15,
+    'bunny': {'name': 'NIBBLE', 'noun': 'BUNNY', 'food': 'carrot', 'head': 15, 'accent': '#FF8FB0',
         'colors': {'O': '#4E4858', 'G': '#ECE8F4', 'S': '#B8B0C8', 'W': '#FFFFFF', 'P': '#FF9DB4', 'K': '#2A1A2E', 'H': '#FFFFFF', 'R': '#FF8FB0', 'Y': '#FFD866', 'E': '#FF5C8A'},
         'body': [
                  '',
@@ -621,7 +625,7 @@ PETS = {
         'frames': [{0: (3, 'OO........OO'), 1: (3, 'OGO......OGO'), 2: (3, 'OGPO....OPGO'), 17: (16, 'OWWO'), 18: (16, 'OWWWO'), 19: (16, 'OWWO')},
                    {0: (3, 'OO'), 1: (3, 'OGO.......OOOO'), 2: (3, 'OGPO....OPGGGO'), 17: (16, 'OWWO'), 18: (16, 'OWWWO'), 19: (16, 'OWWO')}],
         'shut': {8: (4, 'GGGG..GGGG'), 9: (4, 'KGGK..KGGK'), 10: (4, 'GKKG..GKKG'), 11: (4, 'GGGG..GGGG')}},
-    'fox': {'name': 'HEX', 'noun': 'FOX', 'food': 'bone', 'head': 14,
+    'fox': {'name': 'HEX', 'noun': 'FOX', 'food': 'bone', 'head': 14, 'accent': '#FF7A1F',
         'colors': {'O': '#4A1E0A', 'G': '#FF7A1F', 'S': '#C2500F', 'W': '#FFF1D6', 'P': '#FF9DB4', 'K': '#1A0F0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#FFD866'},
         'body': [
                  '.OO............OO.',
@@ -651,7 +655,7 @@ PETS = {
         'frames': [{11: (19, 'OO'), 12: (18, 'OWWO'), 13: (17, 'OWWWO'), 14: (17, 'OGGGO'), 15: (17, 'OGGGGO'), 16: (17, 'OGGGGO'), 17: (17, 'OGGGGO'), 18: (16, 'OGGGGO'), 19: (16, 'OGGGO'), 20: (16, 'OGGO'), 21: (16, 'OGO')},
                    {12: (20, 'OO'), 13: (19, 'OWWO'), 14: (18, 'OWWWO'), 15: (17, 'OGGGGO'), 16: (17, 'OGGGGO'), 17: (17, 'OGGGGO'), 18: (16, 'OGGGGO'), 19: (16, 'OGGGO'), 20: (16, 'OGGO'), 21: (16, 'OGO')}],
         'shut': {7: (4, 'GGGG..GGGG'), 8: (4, 'KGGK..KGGK'), 9: (4, 'GKKG..GKKG'), 10: (4, 'GGGG..GGGG')}},
-    'penguin': {'name': 'SUDO', 'noun': 'PENGUIN', 'food': 'fish', 'head': 11,
+    'penguin': {'name': 'SUDO', 'noun': 'PENGUIN', 'food': 'fish', 'head': 11, 'accent': '#8FB2FF',
         'colors': {'O': '#1C2033', 'G': '#4A5578', 'S': '#323A58', 'W': '#F4F6FF', 'P': '#FF9DB4', 'K': '#141624', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFB02E'},
         'body': [
                  '',
@@ -681,6 +685,34 @@ PETS = {
         'frames': [{13: (16, 'O'), 14: (16, 'SO'), 15: (16, 'SSO'), 16: (16, 'SSO'), 17: (16, 'SO')},
                    {11: (17, 'OO'), 12: (16, 'OSSO'), 13: (16, 'SSO'), 14: (16, 'SO')}],
         'shut': {6: (6, 'WW..WW'), 7: (6, 'KK..KK')}},
+    'frog': {'name': 'PING', 'noun': 'FROG', 'food': 'fly', 'head': 10, 'accent': '#6FD36B',
+        'colors': {'O': '#173A12', 'G': '#6FD36B', 'S': '#3C9A38', 'W': '#E6F5C4', 'P': '#FF9DB4', 'K': '#0E1A0A', 'H': '#FFFFFF', 'R': '#F23645', 'Y': '#FFD866', 'E': '#F5D547'},
+        'body': [
+                 '..OOOO......OOOO..',
+                 '.OWHWWO....OWHWWO.',
+                 '.OWKKWO....OWKKWO.',
+                 '.OWKKWOOOOOOWKKWO.',
+                 'OGOWWOGGGGGGOWWOGO',
+                 'OGGOOGGGGGGGGOOGGO',
+                 'OGGGGGGGGGGGGGGGGO',
+                 'OGPPGGGGGGGGGGPPGO',
+                 'OGGGOOOOOOOOOOGGGO',
+                 '.OGGGGGGGGGGGGGGO.',
+                 '..OOGGGGGGGGGGOO..',
+                 '...OGGWWWWWWGGO...',
+                 '..OGGWWWWWWWWGGO..',
+                 '.OGSGWWWWWWWWGSGO.',
+                 '.OGSGWWWWWWWWGSGO.',
+                 'OGGSGGWWWWWWGGSGGO',
+                 'OGGGSGGWWWWGGSGGGO',
+                 'OGGGGSGGGGGGSGGGGO',
+                 '.OGGGGGGGGGGGGGGO.',
+                 'OGSGOGGGOOGGGOGSGO',
+                 'OGGGGOOO..OOOGGGGO',
+                 '.OOOO........OOOO.',
+                 ''],
+        'frames': [{9: (5, 'GGGGGGGG')}, {9: (5, 'OWWWWWWO'), 10: (4, 'OWWWWWWWWO')}],  # the throat puffs to croak
+        'shut': {1: (2, 'GGGG......GGGG'), 2: (2, 'OOOO......OOOO'), 3: (2, 'GGGG......GGGG')}},
 }
 
 
@@ -726,8 +758,11 @@ BONE = [['WW.....WW', 'WWWWWWWWW', '.WWWWWWW.', 'WWWWWWWWW', 'WW.....WW'],
 CARROT = [['......L.L', '..CCCCCL.', 'CCCCCCCLL', '..CCCCCL.', '......L.L'],
           ['......L.L', '.....CCL.', '....CCCLL', '.....CCL.', '......L.L'],
           ['......L.L', '.......L.', '.......LL', '.......L.', '......L.L']]
+FLY = [['.WW.WW...', '..WKW....', '.KKKKK...', '..KKK....', '...K.....'],
+       ['.W..W....', '..KKW....', '.KKKK....', '..KK.....', '.........'],
+       ['.........', '..K......', '.K.K.....', '.........', '.........']]
 FOOD = {'fish': (FISH, {'B': '#7EC8FF', 'W': CREAM}), 'bone': (BONE, {'W': CREAM}),
-        'carrot': (CARROT, {'C': '#FF8A2A', 'L': '#7BD88F'})}  # three bites each
+        'carrot': (CARROT, {'C': '#FF8A2A', 'L': '#7BD88F'}), 'fly': (FLY, {'K': '#2A2E33', 'W': '#CFE8FF'})}  # three bites each
 BALL = ['.YYYY.', 'YYRRYY', 'YRRYYY', 'YYYYRY', 'YYYRRY', '.YYYY.']
 ICONS = {  # 9x9 button icons
     'globe': ['..CCCCC..', '.C..C..C.', 'C..C.C..C', 'CCCCCCCCC', 'C..C.C..C', 'CCCCCCCCC', 'C..C.C..C', '.C..C..C.', '..CCCCC..'],
@@ -913,7 +948,7 @@ def projects_mark(col, row, size=16):
     return cells
 
 
-def projects_card(downloads=None, now=None, only=None):
+def projects_card(downloads=None, now=None, only=None, device=DEVICE_LIVE, legacy=False):
     """The projects as one card in four bands: the heading, then Cadran, Lift and LED Board. Each band is
     an image of its own so README.md can link it; api/cadran.py and api/lift.py serve theirs live (the
     download count, the clocks), the build writes the other two. The live bands come as (margin, live
@@ -922,14 +957,14 @@ def projects_card(downloads=None, now=None, only=None):
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | title('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))
     makers = [lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''),
-              lambda b: cadran(b, downloads, now), lambda b: lift(b, None, now), lambda b: board(b)]
+              lambda b: cadran(b, downloads, now, legacy), lambda b: lift(b, None, now), lambda b: board(b)]
     tops = [0, 32, 108, 184, 260]
     out = []
     for i, make in enumerate(makers):
         if only is None or i == only:
             alt, body, css = make(pn.at_row(tops[i]))
             band = dict(top=tops[i] or None, bottom=tops[i + 1] if i < 3 else None)
-            out += columns(pn, DEVICE_LIVE, [alt, alt, ''], body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
+            out += columns(pn, device, [alt, alt] + [''] * (len(device) - 1), body, css, **band) if i in (1, 2) else slices(pn, [alt], body, css, **band)
     return out
 
 
@@ -999,25 +1034,38 @@ def iphone(color):
             | slab(233, 3, 34, 62, 6, mix(tint, white, .5), mix(tint, dark, .3)) | slab(234, 4, 32, 60, 6, (14, 14, 18), (14, 14, 18)))
 
 
-def cadran(pn, downloads=None, now=None):
+def cadran(pn, downloads=None, now=None, legacy=False):
     """Cadran on an iMac desktop: its Titan face on the wallpaper, with the menu bar, folders and dock.
-    `downloads` comes live from the counter cadranapp.com keeps (api/cadran.py)."""
+    `downloads` comes live from the counter cadranapp.com keeps (api/cadran.py). `legacy`: the pink look of
+    the README before ?v=2, until that README is gone."""
+    accent, top, bottom, ink, dock_top, dock_bottom = (
+        ('#FF7A9A', (205, 98, 124), (176, 82, 106), (70, 30, 42), (226, 150, 170), (204, 128, 150)) if legacy else
+        (CADRAN, (236, 124, 38), (196, 92, 18), (64, 30, 8), (246, 172, 112), (224, 146, 88)))
+
     def demo(pn):
-        wall = {(225 + c, 5 + r): hexc(mix((205, 98, 124), (176, 82, 106), r / 32)) for r in range(33) for c in range(54)}
-        ink = hexc((70, 30, 42))  # Titan's maroon digits, dark like the unlit LEDs between them
+        wall = {(225 + c, 5 + r): hexc(mix(top, bottom, r / 32)) for r in range(33) for c in range(54)}
+        ink_ = hexc(ink)  # Titan's dark digits, dark like the unlit LEDs between them
         titan = art_data()['titan']
         tw = len(titan['0'][0])  # the cells touch: the glyphs' own margins are the gap, as on the face
         clock, clock_css = ticking(pn, titan, {0: (229, 9), 1: (229 + tw, 9), 2: (229, 21), 3: (229 + tw, 21)},
-                                   now or dt.datetime.now(dt.timezone.utc), ink, 'ti')  # hours over minutes, as Titan sets them
-        menu = ({(225 + c, 5 + r): hexc(mix((205, 98, 124), (255, 255, 255), .3)) for r in range(3) for c in range(54)}
-                | sprite(['.C.', 'CCC', 'CCC'], {'C': ink}, 227, 5)  # the Apple menu, menus, status items
-                | {(c, 6): ink for a, b in ((232, 235), (238, 241), (244, 246), (266, 268), (271, 277)) for c in range(a, b + 1)})
+                                   now or dt.datetime.now(dt.timezone.utc), ink_, 'ti')  # hours over minutes, as Titan sets them
+        menu = ({(225 + c, 5 + r): hexc(mix(top, (255, 255, 255), .3)) for r in range(3) for c in range(54)}
+                | sprite(['.C.', 'CCC', 'CCC'], {'C': ink_}, 227, 5)  # the Apple menu, menus, status items
+                | {(c, 6): ink_ for a, b in ((232, 235), (238, 241), (244, 246), (266, 268), (271, 277)) for c in range(a, b + 1)})
         folders = {(271 + c, top + r): '#6CB8F0' for top in (10, 17) for r in range(5) for c in range(6) if r or c < 3}
-        dock = slab(237, 33, 22, 4, 1, (226, 150, 170), (204, 128, 150))
+        dock = slab(237, 33, 22, 4, 1, dock_top, dock_bottom)
         for i, colors in enumerate([('#4A9BFF',), ('#B63D60', '#E2522A'), ('#4CD964',), ('#FFB340',), ('#C8C8D0',)]):
             dock |= {(239 + i * 4 + c, 34 + r): colors[min(c * len(colors) // 3, len(colors) - 1)] for c in range(3) for r in range(2)}
-        count = f'{downloads:,} DOWNLOADS' if downloads else ''  # under the iMac: live, so in the device's column
-        return pn.draw(imac(CADRAN) | wall | menu | folders | dock | text(count, 252 - text_width(count, '3x5') // 2, 57, CADRAN, '3x5')) + clock, clock_css
+        count = {}  # under the iMac: live, so in the device's column
+        if downloads and legacy:
+            label = f'{downloads:,} DOWNLOADS'
+            count = text(label, 252 - text_width(label, '3x5') // 2, 57, accent, '3x5')
+        elif downloads:
+            label = f'{downloads:,} DOWNLOADS'
+            w = 7 + text_width(label, '3x5')
+            x = min(252 - w // 2, 284 - w)  # centred under the iMac, but inside the card
+            count = sprite(STAT_ICONS['download'], {'C': CADRAN}, x, 57) | text(label, x + 7, 57, CADRAN, '3x5')
+        return pn.draw(imac(accent) | wall | menu | folders | dock | count) + clock, clock_css
     link = 'CADRANAPP.COM ↗'
     return project(pn, 'Cadran: clock faces rendered on your macOS wallpaper, on every Space and display. Featured on Product Hunt '
                    'and in awesome-mac. Built with SwiftUI, Core Animation and Next.js.'
@@ -1025,7 +1073,7 @@ def cadran(pn, downloads=None, now=None):
                    'CADRAN', 'MACOS',
                    ['CLOCK FACES RENDERED ON YOUR WALLPAPER,', 'ON EVERY SPACE AND EVERY DISPLAY.',
                     'FEATURED ON PRODUCT HUNT & AWESOME-MAC.'],
-                   'SWIFTUI · CORE ANIMATION · NEXT.JS', link, CADRAN, cadran_icon(6, 6), demo)
+                   'SWIFTUI · CORE ANIMATION · NEXT.JS', link, accent, cadran_icon(6, 6), demo)
 
 
 # The iPhone's lock-screen digits, drawn by hand at 5x9 so every stroke is one even LED (SF condensed came
@@ -1136,6 +1184,7 @@ STAT_ICONS = {  # 5x5, beside each count
     'repo': ['CCCC.', 'C..C.', 'C..C.', 'CCCC.', 'C.C..'],
     'star': ['..C..', 'CCCCC', '.CCC.', '.C.C.', 'C...C'],
     'follower': ['.CCC.', '.CCC.', '.....', 'CCCCC', 'CCCCC'],
+    'download': ['..C..', 'C.C.C', '.CCC.', '..C..', 'CCCCC'],  # an arrow down onto a tray
 }
 
 
@@ -1212,7 +1261,7 @@ def github():
 
 LINKS = [('PORTFOLIO', 'globe', CREAM, 'Portfolio: ilyomix.github.io'),
          ('LINKEDIN', 'in', LIFT, 'LinkedIn: Ilyes Abd-Lillah'),
-         ('EMAIL', 'mail', CADRAN, 'Email Ilyes')]
+         ('EMAIL', 'mail', PET, 'Email Ilyes')]
 
 
 def links():
@@ -1278,7 +1327,7 @@ def pet_card():
     return Panel(290, 106, width=900)
 
 
-def pet_panel(state=None, now=None):
+def pet_panel(state=None, now=None, strut=None):
     """The live top of the pet card as (margin, live part), see columns, laid out like a project card: the
     pet, its copy and a stats box. api/pet.py serves the live part; the buttons below it are static, see pet_controls."""
     state, now = state or pet_state(), now or dt.datetime.now(dt.timezone.utc)
@@ -1314,7 +1363,7 @@ def pet_panel(state=None, now=None):
         prop, prop_css = frames('food', [pn.draw(sprite(f, colors, 52, 43, 2)) for f in food], 3)
     elif action in ('pet', 'choose'):
         prop = ''.join(f'<g class="heart" style="animation-delay:{i * .8}s">'
-                       f'{pn.draw(sprite(HEART, {"R": PET}, 46 + i * 8, 12 + (i % 2) * 6, 1))}</g>' for i in range(3))
+                       f'{pn.draw(sprite(HEART, {"R": pet["accent"]}, 46 + i * 8, 12 + (i % 2) * 6, 1))}</g>' for i in range(3))
         prop_css = (f'.heart{{animation:heart 2.4s steps(8) infinite}}'
                     f'@keyframes heart{{from{{transform:translateY({pn.px(8)}px);opacity:1}}to{{transform:none;opacity:0}}}}')
     elif action == 'play':
@@ -1329,15 +1378,15 @@ def pet_panel(state=None, now=None):
     did = {'feed': 'FED', 'pet': 'PETTED', 'play': 'PLAYED', 'choose': 'PICKED'}[last['action']] if last else ''  # the pet's name is the title
     foot = f'LAST VISITOR: {did} · {when}' if last else 'NO VISITORS YET. BE THE FIRST!'
     info = card_text(name, f"PROFILE {pet['noun']}", foot, ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
-                                                          f'THE PAGE RELOADS AND {name} REACTS.'], None, left, PET, screen=229)
-    mood, mood_color = ('HAPPY', PET) if awake else ('ASLEEP', MUTED)
+                                                          f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], screen=229)
+    mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
     info |= text('MOOD', 232, 7, MUTED, '3x5') | text(mood, 283, 7, mood_color, '3x5', anchor='end') | hline(229, 285, 14, RULE)
     place = last['where'] if last else 'NO VISITORS'
     if text_width(place, '3x5') > 47 and ', ' in place:  # 47 LEDs after the pin: a long city drops the country first
         place = place.split(', ')[0]
     while text_width(place, '3x5') > 47:
         place = place[:-1].rstrip(' ,')
-    info |= hline(229, 285, 44, RULE) | sprite(['CCC', 'C.C', 'CCC', '.C.', '.C.'], {'C': PET}, 232, 47) | text(place, 283, 47, CREAM, '3x5', anchor='end')
+    info |= hline(229, 285, 44, RULE) | sprite(['CCC', 'C.C', 'CCC', '.C.', '.C.'], {'C': pet['accent']}, 232, 47) | text(place, 283, 47, CREAM, '3x5', anchor='end')
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):
         info |= text(done, 232, 19 + i * 9, color, '3x5') | text(str(min(state[key], 9999)), 283, 17 + i * 9, CREAM, anchor='end')
     Name = name.capitalize()
@@ -1346,7 +1395,8 @@ def pet_panel(state=None, now=None):
     summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
                f"played with {state['play']} times. {visit}")
     art_ = floor + f'<g class="petbody">{pose}{eyes}</g>' + prop + pn.draw(info)
-    return columns(pn, [0], ['', summary], art_, css + prop_css, bottom=PET_CUT)
+    cuts = [] if strut is None else [strut]  # whole: it loads below the fold, where its arrival moves nothing in view
+    return columns(pn, cuts, [''] * len(cuts) + [summary], art_, css + prop_css, bottom=PET_CUT)
 
 
 def pet_button(i, pressed=False):
@@ -1364,14 +1414,22 @@ def pet_button(i, pressed=False):
     return cells | sprite(ICONS['reload'], {'C': color}, b - 9, top + 4)  # at the button's end, like the links' arrows: this click reloads
 
 
+def head_tile(i):
+    """The switch's tile for the i-th pet, one per slice of the pet card: (centre LED column, half width).
+    Six pets make sixths of 150 px, cut between LEDs."""
+    pn, n = pet_card(), len(PETS)
+    cols = pn.width / n / pn.p
+    return round((pn.width / n * (i + .5) - pn.x) / pn.p), int(cols // 3)
+
+
 def pet_head(i, pressed=False):
-    """The switch's tile for the i-th pet in its fifth of the pet card: the head and its first pose, cropped
+    """The switch's tile for the i-th pet in its slice of the pet card: the head and its first pose, cropped
     to the head. Pressed, the tile lights up in the pet card's pink."""
     other = PETS[list(PETS)[i]]
-    c, h = 24 + 60 * i, other['head']  # c: the fifth's centre LED
+    c, half, h = head_tile(i) + (other['head'],)
     tone, edge, fill = (PET, .7, .16) if pressed else (MUTED, .35, .03)
-    cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - 20, c + 20) or r in (84, 102) else fill))
-             for x in range(c - 20, c + 21) for r in range(84, 103) if not (x in (c - 20, c + 20) and r in (84, 102))}
+    cells = {(x, r): hexc(mix(rgb(BG), rgb(tone), edge if x in (c - half, c + half) or r in (84, 102) else fill))
+             for x in range(c - half, c + half + 1) for r in range(84, 103) if not (x in (c - half, c + half) and r in (84, 102))}
     for rows in (other['body'], layer(other['frames'][0])):
         cells |= sprite([ln[:18] for ln in rows[:h]], other['colors'], c - 9, 101 - h)
     return cells
@@ -1382,9 +1440,10 @@ def pet_press(do, kind=None):
     as it is on the card, then pressed, with what it did. Reduced motion shows it pressed straight away."""
     if do == 'choose':
         i = list(PETS).index(kind)
-        up, down, (c0, r0, c1, r1) = pet_head(i), pet_head(i, True), (24 + 60 * i - 20, 84, 24 + 60 * i + 20, 102)
+        (c, half), up, down = head_tile(i), pet_head(i), pet_head(i, True)
+        c0, r0, c1, r1 = c - half, 84, c + half, 102
         name = PETS[kind]['name']
-        said, color = f'{name} ON STAGE', PET
+        said, color = f'{name} ON STAGE', PETS[kind]['accent']
     else:
         i = [a[0] for a in ACTIONS].index(do)
         up, down = pet_button(i), pet_button(i, True)
@@ -1513,19 +1572,23 @@ def save_art(**parts):
     path.write_text(json.dumps(data | parts, indent=1) + '\n')
 
 
+STILL = dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc)  # static pieces never show a clock: drawn at a fixed time, a
+# rebuild changes them only when what they show changes
+
+
 def build_all():
+    IMG.mkdir(exist_ok=True)
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_copy, _, cadran_edge, lift_copy, _, lift_edge, led_board = projects_card()
-    (OUT / 'projects-1.svg').write_text(heading)
-    for name, svg in (('projects-2-copy', cadran_copy), ('projects-2-edge', cadran_edge), ('projects-3-copy', lift_copy), ('projects-3-edge', lift_edge)):
-        (OUT / f'{name}.svg').write_text(svg)
-    (OUT / 'projects-4.svg').write_text(led_board)
+    heading, cadran_text, _, lift_copy, _, led_board = projects_card(now=STILL)
+    (IMG / 'projects-1.svg').write_text(heading)
+    for name, svg in (('projects-2-copy', cadran_text), ('projects-3-copy', lift_copy)):
+        (IMG / f'{name}.svg').write_text(svg)
+    (IMG / 'projects-4.svg').write_text(led_board)
     greeting, _, im, header = hero()
     for name, svg in (('hero-greeting', greeting), ('hero-im', im), ('hero-body', header)):
-        (OUT / f'{name}.svg').write_text(svg)
-    (OUT / 'pet-margin.svg').write_text(pet_panel()[0])
+        (IMG / f'{name}.svg').write_text(svg)
     controls = pet_controls()
     write('pet-actions', controls[:3])
     write('pet-switch', controls[3:])
