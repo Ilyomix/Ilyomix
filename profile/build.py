@@ -26,7 +26,6 @@ from pathlib import Path
 
 OUT = Path(__file__).parent
 IMG = OUT / 'img'  # what README.md shows
-TODAY = dt.date.today()
 
 # --- fonts: Crypto LED Board src/led/font5x7.ts, font3x5.ts, font7x9.ts --------------
 
@@ -58,7 +57,7 @@ FONT_5X7 = {k: v.split() for k, v in {
     '#': '01010 01010 11111 01010 11111 01010 01010',
     # Added for this profile, same grid.
     '!': '00100 00100 00100 00100 00100 00000 00100',
-    '·': '00000 00000 00000 00100 00000 00000 00000', '@': '01110 10001 10111 10101 10111 10000 01111',
+    '@': '01110 10001 10111 10101 10111 10000 01111',
     '▲': '00000 00000 00100 01110 11111 00000 00000', '▼': '00000 00000 11111 01110 00100 00000 00000',
     '◆': '00000 00100 01110 11111 01110 00100 00000', '↗': '00000 00111 00011 00101 01000 10000 00000',
 }.items()}
@@ -79,7 +78,7 @@ FONT_3X5 = {k: v.split() for k, v in {
     '/': '001 001 010 100 100', '+': '000 010 111 010 000', '&': '010 101 010 101 011', '?': '110 001 010 000 010',
     "'": '010 010 000 000 000', '(': '001 010 010 010 001', ')': '100 010 010 010 100',
     # Added for this profile, same grid.
-    '·': '0 0 1 0 0', '!': '1 1 1 0 1', '↗': '0111 0011 0101 1000 0000', '@': '0110 1001 1011 1000 0111',
+    '!': '1 1 1 0 1', '↗': '0111 0011 0101 1000 0000', '@': '0110 1001 1011 1000 0111',
     '%': '101 001 010 100 101',
 }.items()}
 
@@ -379,7 +378,7 @@ def ticker(segments, row, gap=6):
             rows, palette = STACK_ICONS[icon[0]]
             cells |= sprite(rows, palette, col, row)
             col += len(rows[0]) + 3
-        cells |= text(s, col, row, color, decor=s in '◆·')  # separators are ornament
+        cells |= text(s, col, row, color, decor=s == '◆')  # an ornament, not text
         col += text_width(s) + gap
     return cells | {(c + col, r): v for (c, r), v in cells.items()}, col
 
@@ -982,8 +981,6 @@ TILE_ICONS = {
 # Pixel emojis that sit on a line of text: (rows, palette).
 EMOJI = {
     'fr': (['BBWWRR'] * 5, {'B': '#3D7BFF', 'W': CREAM, 'R': '#EF4135'}),  # 5 tall, on 3x5 text
-    'sparkle': (['..C..', '..C..', 'CC.CC', '..C..', '..C..'], {'C': PET}),
-    'apple': (['...G.', '.RGR.', 'RRRRR', 'RRRRR', '.R.R.'], {'R': '#F23645', 'G': '#4CD964'}),
 }
 
 
@@ -992,138 +989,31 @@ def emoji(key, col, row):
     return sprite(rows, palette, col, row)
 
 
-# Country flags at 6x5 LEDs, the size of the hero's French flag, by ISO 3166 code (Vercel's x-vercel-ip-country).
-# Rows are split by spaces; each row is stretched across the six columns and the rows down the five, so 'BWR'
-# is three upright bands, 'K R Y' three across and a 6x5 grid is drawn as it is. '.' is empty. A country left out
-# keeps its code in text.
-FLAG_COLORS = {'R': '#EF4135', 'W': CREAM, 'B': '#3D7BFF', 'b': '#6EC1FF', 'T': '#00B4C8', 'G': '#1FAF4F',
-               'Y': '#FFD23A', 'O': '#FF8A1F', 'K': '#2A2A2A', 'M': '#A3243B', 'D': '#8B5A2B'}
-FLAGS = {
-    # Europe
-    'AD': 'BYR', 'AL': 'RRRRRR RRKKRR RKKKKR RRKKRR RRRRRR', 'AM': 'R B O', 'AT': 'R W R', 'AZ': 'b R G',
-    'BA': 'BYYYBB BBYYBB BBBYYB BBBBYB BBBBBB', 'BE': 'KYR', 'BG': 'W G R', 'BY': 'WRRRRR WRRRRR WRRRRR WGGGGG WGGGGG',
-    'CH': 'RRRRRR RRWWRR RWWWWR RRWWRR RRRRRR', 'CY': 'WWWWWW WWOOOW WOOOWW WWWWWW WWGGWW',
-    'CZ': 'BWWWWW BBWWWW BBBRRR BBRRRR BRRRRR', 'DE': 'K R Y', 'DK': 'RRWRRR RRWRRR WWWWWW RRWRRR RRWRRR',
-    'EE': 'B K W', 'ES': 'R Y Y Y R', 'FI': 'WWBWWW WWBWWW BBBBBB WWBWWW WWBWWW', 'FO': 'WBRBWW BBRBBB RRRRRR BBRBBB WBRBWW',
-    'FR': 'BWR', 'GB': 'BWRRWB WBRRBW RRRRRR WBRRBW BWRRWB', 'GE': 'WWRRWW WWRRWW RRRRRR WWRRWW WWRRWW',
-    'GL': 'WWWWWW WRRWWW RWWRRR RRRRRR RRRRRR', 'GR': 'BWBBBB WWWWWW BWBBBB WWWWWW BBBBBB',
-    'HR': 'RRRRRR RRWRRR WWRWWW BBWBBB BBBBBB', 'HU': 'R W G', 'IE': 'GWO', 'IS': 'BWRWBB WWRWWW RRRRRR WWRWWW BWRWBB',
-    'IT': 'GWR', 'LI': 'BYBBBB BBBBBB BBBBBB RRRRRR RRRRRR', 'LT': 'Y G R', 'LU': 'R W b', 'LV': 'M M W M M', 'MC': 'R W',
-    'MD': 'BBYYRR BBDDRR BBYYRR', 'ME': 'YYYYYY YRRRRY YRYYRY YRRRRY YYYYYY', 'MK': 'YRRRRY RYRRYR YYYYYY RYRRYR YRRRRY',
-    'MT': 'WR', 'NL': 'R W B', 'NO': 'RWBWRR WWBWWW BBBBBB WWBWWW RWBWRR', 'PL': 'W R',
-    'PT': 'GGRRRR GGYRRR GYYYRR GGYRRR GGRRRR', 'RO': 'BYR', 'RS': 'R B W', 'RU': 'W B R',
-    'SE': 'BBYBBB BBYBBB YYYYYY BBYBBB BBYBBB', 'SI': 'WBWWWW BBBBBB RRRRRR', 'SK': 'WRWWWW BRBBBB RRRRRR', 'SM': 'W b',
-    'TR': 'RRRRRR RWWRRR RWRWRR RWWRRR RRRRRR', 'UA': 'B Y', 'VA': 'YW', 'XK': 'BBBBBB BBYYBB BBYYYB BBBYBB BBBBBB',
-    # the Americas
-    'AR': 'bbbbbb bbbbbb WWYYWW bbbbbb bbbbbb', 'BB': 'BBYYBB BKYYKB BBKKBB BBYYBB BBYYBB', 'BO': 'R Y G',
-    'BR': 'GGYYGG GYBBYG YBBBBY GYBBYG GGYYGG', 'BS': 'KTTTTT KKYYYY KKKYYY KKYYYY KTTTTT',
-    'BZ': 'RRRRRR BBWWBB BWWWWB BBWWBB RRRRRR', 'CA': 'RWWWWR RWRRWR RWRRWR RWWRWR RWWWWR',
-    'CL': 'BWBWWW BBBWWW RRRRRR RRRRRR RRRRRR', 'CO': 'Y Y Y B R', 'CR': 'B W R W B',
-    'CU': 'RBBBBB RRWWWW RWRBBB RRWWWW RBBBBB', 'DO': 'BBWRRR BBWRRR WWWWWW RRWBBB RRWBBB',
-    'EC': 'YYYYYY YYYYYY YYDDYY BBBBBB RRRRRR', 'GT': 'bbWWbb bbWWbb bbGGbb bbWWbb bbWWbb',
-    'GY': 'RYYGGG RRYYGG KRRYYG RRYYGG RYYGGG', 'HN': 'BBBBBB BBBBBB WWBBWW BBBBBB BBBBBB',
-    'HT': 'BBBBBB BBWWBB RRWWRR RRRRRR RRRRRR', 'JM': 'YGGGGY KYGGYK KKYYKK KYGGYK YGGGGY',
-    'MX': 'GGWWRR GGWWRR GGDDRR GGWWRR GGWWRR', 'NI': 'BBBBBB BBBBBB WWbbWW BBBBBB BBBBBB',
-    'PA': 'WBWRRR WWWRRR BBBWWW BBBWRW BBBWWW', 'PE': 'RWR', 'PR': 'bRRRRR bbWWWW bWbRRR bbWWWW bRRRRR',
-    'PY': 'RRRRRR RRRRRR WWYYWW BBBBBB BBBBBB', 'SR': 'GGGGGG WWWWWW RRYYRR WWWWWW GGGGGG',
-    'SV': 'BBBBBB BBBBBB WWYYWW BBBBBB BBBBBB', 'TT': 'RRRWKW RRWKWR RWKWRR WKWRRR KWRRRR',
-    'US': 'BBBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'UY': 'YYWWWW YYBBBB WWWWWW BBBBBB WWWWWW', 'VE': 'Y B R',
-    'AG': 'KKYYKK RBBBBR RRWWRR RRWWRR RRRRRR', 'DM': 'GGYKGG GGYKGG YYRRYY GGYKGG GGYKGG',
-    'GD': 'RRRRRR RYYYYR RGRRGR RYYYYR RRRRRR', 'KN': 'GGGGYK GGGYKY GGYKYR GYKYRR YKYRRR',
-    'LC': 'bbbbbb bbWWbb bWKKWb bWYYWb WYYYYW', 'VC': 'BYYYYG BYGGYG BYYYYG',
-    # Asia
-    'AE': 'RGGGGG RGGGGG RWWWWW RKKKKK RKKKKK', 'AF': 'KKRRGG KKRRGG KKWWGG KKRRGG KKRRGG',
-    'BD': 'GGGGGG GGRRGG GRRRRG GGRRGG GGGGGG', 'BH': 'WWRRRR WRRRRR WWRRRR WRRRRR WWRRRR',
-    'BN': 'WKYYYY YWKYYY YYRKYY YYYWKY YYYYWK', 'BT': 'YYYYYO YYYWOO YYWWOO YWOOOO WOOOOO',
-    'CN': 'RYRYRR YYYRRR RYRYRR RRRRRR RRRRRR', 'HK': 'RRRRRR RRWWRR RWWWWR RRWWRR RRRRRR',
-    'ID': 'R W', 'IL': 'WWWWWW BBBBBB WWBBWW BBBBBB WWWWWW', 'IN': 'OOOOOO OOOOOO WWBBWW GGGGGG GGGGGG',
-    'IQ': 'RRRRRR RRRRRR WGGGGW KKKKKK KKKKKK', 'IR': 'GGGGGG GGGGGG WWRRWW RRRRRR RRRRRR',
-    'JO': 'RKKKKK RRWWWW RWRWWW RRGGGG RGGGGG', 'JP': 'WWWWWW WWRRWW WRRRRW WWRRWW WWWWWW',
-    'KG': 'RRRRRR RYYYYR RYRRYR RYYYYR RRRRRR', 'KH': 'BBBBBB RRWWRR RWWWWR RRRRRR BBBBBB',
-    'KP': 'BBBBBB WWWWWW RWRRRR WWWWWW BBBBBB', 'KR': 'KWWWWK WWRRWW WRRBBW WWBBWW KWWWWK',
-    'KW': 'KKGGGG KKGGGG KWWWWW KKRRRR KKRRRR', 'KZ': 'TTTTTT TTYYTT TYYYYT TTYYTT TTTTTT',
-    'LA': 'RRRRRR BBWWBB BWWWWB BBWWBB RRRRRR', 'LB': 'RRRRRR WWGGWW WGGGGW WWGGWW RRRRRR',
-    'LK': 'YGOMMM YGOMYM YGOMMM YGOMYM YGOMMM', 'MM': 'YYYYYY YYWWYY GWWWWG RRWWRR RRRRRR',
-    'MN': 'RRBBRR RYBBRR RYBBRR RYBBRR RRBBRR', 'MO': 'GGYGGG GGWWGG GWWWWG GGWWGG GGGGGG', 'MV': 'RRRRRR RGGGGR RGWGGR RGGGGR RRRRRR',
-    'MY': 'BYBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'NP': 'BRB... BWRB.. BRRB.. BRWRB. BBBBBB',
-    'OM': 'RWWWWW RWWWWW RRRRRR RGGGGG RGGGGG', 'PH': 'WBBBBB WWBBBB WYWBBB WWRRRR WRRRRR',
-    'PK': 'WGGGGG WGWWGG WGWGGG WGWWGG WGGGGG', 'PS': 'RKKKKK RRWWWW RRRWWW RRGGGG RGGGGG',
-    'QA': 'WWMMMM WMMMMM WWMMMM WMMMMM WWMMMM', 'SA': 'GGGGGG GWWWWG GGGGGG GWWWGG GGGGGG',
-    'SG': 'RWRRRR RRRRRR WWWWWW WWWWWW', 'SY': 'GGGGGG GGGGGG WRWRWR KKKKKK KKKKKK',
-    'TH': 'R W B W R', 'TJ': 'RRRRRR RRRRRR WWYYWW GGGGGG GGGGGG', 'TL': 'KYRRRR KKYRRR KWKYRR KKYRRR KYRRRR',
-    'TM': 'GMGGGG GMGWGG GMGGGG GMGWGG GMGGGG', 'TW': 'BWBRRR BBBRRR RRRRRR RRRRRR RRRRRR',
-    'UZ': 'T W G', 'VN': 'RRRRRR RRYYRR RYYYYR RRYYRR RRRRRR', 'YE': 'R W K',
-    # Africa
-    'AO': 'RRRRRR RRYRRR RRYYRR KKKYKK KKKKKK', 'BF': 'RRRRRR RRYYRR GGYYGG GGGGGG GGGGGG',
-    'BI': 'WRRRRW GWRRWG GGWWGG GWRRWG WRRRRW', 'BJ': 'GGYYYY GGYYYY GGRRRR GGRRRR GGRRRR', 'BW': 'b W K W b',
-    'CD': 'TYTTYR TTTYRY TTYRYT TYRYTT YRYTTT', 'CF': 'BYRRBB WWRRWW GGRRGG YYRRYY YYRRYY',
-    'CG': 'GGGGYR GGGYRR GGYRRR GYRRRR YRRRRR', 'CI': 'OWG', 'CM': 'GGRRYY GGRRYY GGYRYY GGRRYY GGRRYY',
-    'CV': 'BBBBBB BBBBBB WWWWWW RRRRRR BBBBBB', 'DJ': 'Wbbbbb WWbbbb WRWGGG WWGGGG WGGGGG',
-    'DZ': 'GGGWWW GGRRWW GRGWWW GGRRWW GGGWWW', 'EG': 'RRRRRR RRRRRR WWYYWW KKKKKK KKKKKK',
-    'ER': 'RGGGGG RRGGGG RYRRRR RRBBBB RBBBBB', 'ET': 'GGGGGG GGGGGG YYBBYY RRRRRR RRRRRR', 'GA': 'G Y B',
-    'GH': 'RRRRRR RRRRRR YYKKYY GGGGGG GGGGGG', 'GM': 'R W B W G', 'GN': 'RYG',
-    'GQ': 'BGGGGG BBWWWW BBWWWW BBRRRR BRRRRR', 'GW': 'RRYYYY RKYYYY RRGGGG RRGGGG RRGGGG',
-    'KE': 'KKKKKK KKRRKK RRWWRR GGRRGG GGGGGG', 'KM': 'GYYYYY GGWWWW GWGRRR GGBBBB GBBBBB',
-    'LR': 'BWBRRR BBBWWW RRRRRR WWWWWW RRRRRR', 'LS': 'BBBBBB WWWWWW WWKKWW GGGGGG GGGGGG',
-    'LY': 'RRRRRR KKKKKK KKWWKK KKKKKK GGGGGG', 'MA': 'RRRRRR RRGGRR RGRRGR RRGGRR RRRRRR',
-    'MG': 'WWRRRR WWRRRR WWGGGG WWGGGG WWGGGG', 'ML': 'GYR', 'MR': 'RRRRRR GGYYGG GYGGYG GGYYGG RRRRRR',
-    'MU': 'R B Y G', 'MW': 'KKRRKK KKKKKK RRRRRR GGGGGG GGGGGG', 'MZ': 'RGGGGG RRWWWW RKKKKK RRWWWW RYYYYY',
-    'NA': 'BBBBWR BYBWRW BBWRWG BWRWGG WRWGGG', 'NE': 'OOOOOO OOOOOO WWOOWW GGGGGG GGGGGG', 'NG': 'GWG',
-    'RW': 'BBBBYB BBBBBB BBBBBB YYYYYY GGGGGG', 'SC': 'BBYYRR BYYRRR YYRRRW YRRRWG RRRWGG',
-    'SD': 'GRRRRR GGWWWW GGGWWW GGKKKK GKKKKK', 'SL': 'G W B', 'SN': 'GGYYRR GGYYRR GGYGRR GGYYRR GGYYRR',
-    'SO': 'bbbbbb bbWWbb bWWWWb bbWWbb bbbbbb', 'SS': 'BKKKKK BBWWWW BYBRRR BBWWWW BGGGGG',
-    'SZ': 'BBBBBB YYYYYY RWWKKR YYYYYY BBBBBB', 'TD': 'BYR', 'TG': 'RWRGGG RRRYYY GGGGGG YYYYYY GGGGGG',
-    'TN': 'RRRRRR RRWWRR RWRRWR RRWWRR RRRRRR', 'TZ': 'GGGYKK GGYKKY GYKKYB YKKYBB KKYBBB',
-    'UG': 'KKKKKK YYWWYY RWWWWR KKWWKK YYYYYY', 'ZA': 'GWRRRR KGWWWW KKGGGG KGWWWW GWBBBB',
-    'ZM': 'GGGGGO GGGGGO GGGRKO GGGRKO GGGRKO', 'ZW': 'WGGGGG WWYYYY WRKKKK WWYYYY WGGGGG',
-    'ST': 'RGGGGG RRYYYY RRKYKY RRYYYY RGGGGG',
-    # Oceania
-    'AU': 'RWRBBB RRRBWB BBBBBB BWBBWB BBBBBB', 'FJ': 'RWRbbb RRRbbb bbbbWb bbbbRb bbbbbb',
-    'NZ': 'RWRBBB RRRBRB BBBBBB BBBRBB BBBBRB', 'PG': 'KRRRRR KKRRYR KWKRRR KKKKRR WKKKKR',
-    'TO': 'WRWRRR RRRRRR WRWRRR RRRRRR RRRRRR', 'WS': 'BWBRRR WBWRRR RRRRRR RRRRRR RRRRRR',
-    'FM': 'bbbbbb bbbWbb bbWbWb bbbWbb bbbbbb', 'KI': 'RRYYRR RYYYYR WWWWWW BBBBBB WWWWWW',
-    'MH': 'BWBBBO BBBBOW BBBOWB BBOWBB BOWBBB', 'NR': 'BBBBBB BBBBBB YYYYYY BWBBBB BBBBBB',
-    'PW': 'bbbbbb bYYbbb YYYYbb bYYbbb bbbbbb', 'SB': 'BWBBYG BBBYGG BWYGGG BYGGGG YGGGGG',
-    'TV': 'RWRbbb RRRbYb bbbbbb bYbbYb bbbYbb', 'VU': 'KYRRRR KKYRRR KKKYYY KKYGGG KYGGGG',
-}
-FLAGS |= dict.fromkeys(('GP', 'MQ', 'GF', 'RE', 'YT', 'PM', 'BL', 'MF', 'WF', 'PF', 'NC'), FLAGS['FR'])  # French overseas
-
-
-def flag(code):
-    """A country's flag at 6x5 LEDs ({(col, row): colour}), or None when FLAGS hasn't got it."""
-    rows = FLAGS.get(code, '').split()
-    return {(c, r): FLAG_COLORS[k] for r in range(5) for c in range(6)
-            for row in [rows[int((r + .5) * len(rows) / 5)]] for k in [row[int((c + .5) * len(row) / 6)]] if k != '.'} if rows else None
-
-
 # --- panels -----------------------------------------------------------------------------
 
-def years():
-    start = dt.date(2017, 9, 1)
-    return TODAY.year - start.year - ((TODAY.month, TODAY.day) < (start.month, start.day))
-
-
 def hero(n=None):
-    """The header as four images, see columns: the top band in three (greeting, the live counter, "I'M:"),
-    then the rest. api/hero.py serves the counter. n is the visitor number (None when the count is out)."""
+    """The header as four images, see columns: the top band in three (the greeting, the live counter, the
+    band's right end), then the rest. api/hero.py serves the counter. n is the visitor number (None when the
+    count is out)."""
     pn = Panel(284, 101)  # rows: border 0, counter housing 5-23, photo and text 28-79, rule 84, ticker 89-95, border 100: 4 clear rows between each
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
              ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('LIFT', LIFT, 'lift'),
              ('CRYPTO LED BOARD', BOARD, 'led-board')]
-    tick, length = ticker([seg for item in stack for seg in (item, ('·', MUTED))], 89)
+    tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
     typed = title_width('ILYES ABD-LILLAH')  # the width the typing uncovers, a letter at a time
-    lines = [('AT POSITIVE SOLUTION · TOULOUSE, FRANCE', 'fr'), (f'{years()}+ YEARS OF PRODUCT INTERFACES, DESIGN SYSTEMS', 'sparkle'),
-             ('AND NATIVE APPS FOR THE MAC AND IPHONE.', 'apple')]
+    lines = [('AT POSITIVE SOLUTION IN TOULOUSE, FRANCE', 'fr'), ('BUILDING INTERFACES AND DESIGN SYSTEMS SINCE 2017.', None),
+             ('ON THE SIDE, I MAKE APPS FOR THE MAC AND IPHONE.', None)]
     intro = {}
-    for i, (ln, icon) in enumerate(lines):  # each line ends on its emoji
-        intro |= text(ln, 68, 60 + i * 7, MUTED, '3x5') | emoji(icon, 68 + text_width(ln, '3x5') + 4, 60 + i * 7)
+    for i, (ln, icon) in enumerate(lines):  # the flag ends the line that names the country
+        intro |= text(ln, 68, 60 + i * 7, MUTED, '3x5') | (emoji(icon, 68 + text_width(ln, '3x5') + 4, 60 + i * 7) if icon else {})
     assert max(c for c, _ in {**name, **intro}) < pn.cols - 2
     chase = {(c, pn.rows - 1): RULE for c in range(-3, pn.cols + 3, 3)}  # marching along the bottom only: the top
     border = {(c, 0): RULE for c in range(0, pn.cols, 3)}  # crosses the counter's cut, and pieces can't march in step
-    lead = 'HELLO VISITOR NUMBER #'  # then the counter, then "I'M:", which leads into the name below
+    lead = 'YOU ARE VISITOR NUMBER'  # then the counter, as on the hit counters of old home pages
     x = 11 + text_width(lead) + 6  # 4 clear LEDs each side of the housing
+    assert HERO_LIVE == (x - 2, x + 91), 'the live cut must frame the housing: move HERO_LIVE and the README widths with it'
     hello, reels, count_css = drums(pn, n, x, 7)
     hello = bezel(x, 7, 7 * 11 + 6 * 2, 15, MUTED) | hello  # the counter's housing
     live = f'<g class="live">{pn.draw({(c, r): RED for c in (6, 7) for r in (13, 14)})}</g>'  # static, so lit even when the count is out
@@ -1131,9 +1021,9 @@ def hero(n=None):
     body = (pn.draw(glow | art('avatar', 6, 28, .14))
             + f'<g clip-path="url(#typed)">{pn.draw(name)}<g clip-path="url(#band)">{pn.draw(title("ILYES ABD-LILLAH", 68, 28, "#FFFFFF", decor=True))}</g></g>'
             + f'<g class="type"><g class="caret">{pn.draw(hline(68 + typed + 2, 68 + typed + 11, 43, CREAM) | hline(68 + typed + 2, 68 + typed + 11, 44, CREAM))}</g></g>'
-            + pn.draw(text('SENIOR TECH LEAD · DESIGN ENGINEER', 68, 47, CREAM) | intro | hline(0, pn.cols - 1, 84, RULE) | border)
+            + pn.draw(text('SENIOR TECH LEAD & DESIGN ENGINEER', 68, 47, CREAM) | intro | hline(0, pn.cols - 1, 84, RULE) | border)
             + f'<g class="chase">{pn.draw(chase)}</g><g class="tick">{pn.draw(tick)}</g>'
-            + pn.draw(hello | text(lead, 11, 11, CREAM) | text("I'M:", x + 7 * 11 + 6 * 2 + 6, 11, CREAM)) + reels + live)
+            + pn.draw(hello | text(lead, 11, 11, CREAM)) + reels + live)
     # The name types itself: a mask that uncovers it a letter at a time, an underscore cursor that follows
     # and then blinks. Reduced motion shows the whole name.
     letters = len('ILYES ABD-LILLAH')
@@ -1146,10 +1036,10 @@ def hero(n=None):
              f'@keyframes sweep{{0%{{transform:none;animation-timing-function:steps(52)}}25%,100%{{transform:translateX({pn.px(208)}px)}}}}'
              f'.chase{{animation:chase .9s steps(3) infinite}}@keyframes chase{{to{{transform:translateX(-{pn.px(3)}px)}}}}'
              + scroll('tick', length, 14, pn) + count_css + '.live{animation:live 1.2s step-end infinite}@keyframes live{50%{opacity:0}}')
-    alt = (f'Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. '
-           f'{years()}+ years of product interfaces, design systems and native apps for the Mac and iPhone.'
-           + ('' if n is None else f' Hello, visitor number {n}!'))  # the alt keeps the greeting short
-    still = alt.split(' Hello,')[0]
+    alt = ('Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. '
+           'Building interfaces and design systems since 2017. On the side, I make apps for the Mac and iPhone.'
+           + ('' if n is None else f' You are visitor number {n}.'))
+    still = alt.split(' You are visitor')[0]
     return (columns(pn, HERO_LIVE, ['', alt, ''], body, style, defs, bottom=HERO_BAND)
             + columns(pn, [], [still], body, style, defs, top=HERO_BAND))
 
@@ -1233,9 +1123,9 @@ def projects_card(downloads=None, now=None, only=None):
     listed below: the badges come last so the live bands keep their numbers."""
     pn = Panel(284, 32 + 72 + 31 + 76 + 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
-               | text('MY PROJECTS', 32, 8, CREAM) | text('3 APPS SHIPPED · MACOS · IOS · WEB', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
+               | text('MY PROJECTS', 32, 8, CREAM) | text('THREE APPS I DESIGNED AND BUILT ON MY OWN.', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
     bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
-        (lambda b: ('My projects: three apps shipped, on macOS, iOS and the web.', b.draw(heading), ''), 0, 32, None),
+        (lambda b: ('My projects: three apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
         (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 135, 211, DEVICE_LIVE),
         (lambda b: board(b), 211, None, None), (badges, 104, 135, BADGE_CUTS)]
     out = []
@@ -1341,13 +1231,13 @@ def cadran(pn, downloads=None, now=None):
             count = sprite(STAT_ICONS['download'], {'C': CADRAN}, x, 64) | text(label, x + 7, 64, CADRAN, '3x5')
         return pn.draw(imac(accent) | wall | menu | folders | dock | count) + clock, clock_css
     link = 'CADRANAPP.COM ↗'
-    return project(pn, 'Cadran: clock faces rendered on your macOS wallpaper, on every Space and display. Featured on Product Hunt '
-                   'and in awesome-mac. Built with SwiftUI, Core Animation and Next.js.'
+    return project(pn, "Cadran, for macOS: a clock on your Mac's wallpaper, behind your windows, on all Spaces and screens. "
+                   'The face on the iMac is called Titan. Made with SwiftUI and Core Animation; the site runs on Next.js.'
                    + (f' Downloaded {downloads:,} times.' if downloads else ''),
                    'CADRAN', 'MACOS',
-                   ['CLOCK FACES RENDERED ON YOUR WALLPAPER,', 'ON EVERY SPACE AND EVERY DISPLAY.',
-                    'FEATURED ON PRODUCT HUNT & AWESOME-MAC.'],
-                   'SWIFTUI · CORE ANIMATION · NEXT.JS', link, accent, cadran_icon(6, 6), demo)
+                   ["A CLOCK ON YOUR MAC'S WALLPAPER, BEHIND", 'YOUR WINDOWS, ON ALL SPACES AND SCREENS.',
+                    'THE FACE ON THE IMAC IS CALLED TITAN.'],
+                   'SWIFTUI, CORE ANIMATION, NEXT.JS', link, accent, cadran_icon(6, 6), demo)
 
 
 # The iPhone's lock-screen digits, drawn by hand at 5x9 so every stroke is one even LED (SF condensed came
@@ -1405,14 +1295,14 @@ def lift(pn, downloads=None, now=None):
                   f'<clipPath id="barwin"><rect {pn.box(239, 57, 22, 1)}/></clipPath>'
                 + f'<g clip-path="url(#reel)"><g class="tens">{pn.draw(tens)}</g><g class="ones">{pn.draw(ones)}</g></g>'
                 + f'<g clip-path="url(#barwin)"><g class="bar">{pn.draw(hline(239, 260, 57, LIFT))}</g></g>'), css + clock_css
-    link = 'FREE ON THE APP STORE ↗' + (f' · {downloads:,} DOWNLOADS' if downloads else '')
-    return project(pn, 'Lift: a research-based hypertrophy program for iPhone and iPad, built backwards from your goal date, '
-                   'with the rest timer on the lock screen and in the Dynamic Island. Free on the App Store.'
+    link = 'FREE ON THE APP STORE ↗' + (f', {downloads:,} DOWNLOADS' if downloads else '')
+    return project(pn, 'Lift, for iPhone and iPad: a muscle-building program planned back from your goal date. The rest timer '
+                   'runs on the lock screen and in the Dynamic Island. Made with React, Capacitor and ActivityKit. Free on the App Store.'
                    + (f' Downloaded {downloads:,} times.' if downloads else ''),
-                   'LIFT', 'IOS · IPADOS',
-                   ['HYPERTROPHY PROGRAM BUILT BACKWARDS', 'FROM YOUR GOAL DATE. REST TIMER ON THE',
-                    'LOCK SCREEN AND IN THE DYNAMIC ISLAND.'],
-                   'REACT · CAPACITOR · ACTIVITYKIT', link, LIFT, art('lift', 6, 6, .22), demo)
+                   'LIFT', 'IOS',
+                   ['A MUSCLE-BUILDING PROGRAM PLANNED BACK', 'FROM YOUR GOAL DATE. THE REST TIMER RUNS',
+                    'ON THE LOCK SCREEN AND DYNAMIC ISLAND.'],
+                   'REACT, CAPACITOR, ACTIVITYKIT', link, LIFT, art('lift', 6, 6, .22), demo)
 
 
 def board(pn):
@@ -1436,12 +1326,12 @@ def board(pn):
                 + f'<clipPath id="win"><rect {pn.box(225, 5, 54, 33)}/></clipPath><g clip-path="url(#win)">'
                 f'<g class="tick">{pn.draw(tick)}</g>{pn.draw(hline(225, 278, 16, RULE))}<g class="chart">{pn.draw(chart)}</g></g>',
                 scroll('tick', n, 10, pn) + scroll('chart', period, 4, pn))
-    return project(pn, 'Crypto LED Board: live Binance Spot prices, charts and order book rendered on a pixel-art LED matrix. '
-                   'Built with React, WebSockets and Canvas/WebGL.',
-                   'LED BOARD', 'CRYPTO · WEB',
-                   ['LIVE BINANCE SPOT PRICES, CHARTS AND', 'ORDER BOOK ON A PIXEL-ART LED MATRIX,',
-                    'WITH CRT EFFECTS AND ITS OWN FONTS.'],
-                   'REACT · WEBSOCKETS · CANVAS / WEBGL', 'OPEN THE LIVE BOARD ↗', BOARD, board_icon(6, 6), demo)
+    return project(pn, 'Crypto LED Board, for the web: live Binance prices, charts and order book on a pixel LED matrix with '
+                   'CRT glow. This profile borrows its fonts and colors. Made with React, WebSockets, Canvas and WebGL.',
+                   'LED BOARD', 'WEB',
+                   ['LIVE BINANCE PRICES, CHARTS AND ORDER BOOK', 'ON A PIXEL LED MATRIX WITH CRT GLOW.',
+                    'THIS PROFILE BORROWS ITS FONTS AND COLORS.'],
+                   'REACT, WEBSOCKETS, CANVAS, WEBGL', 'OPEN THE LIVE BOARD ↗', BOARD, board_icon(6, 6), demo)
 
 
 GH = '#39D353'  # GitHub's contribution green
@@ -1624,8 +1514,7 @@ def pet_state(fields=None):
     state['last'] = None
     if f.get('last_action') in PET_ACTIONS and f.get('last_at'):
         kind = f.get('last_kind') if f['last_action'] == 'choose' else state['chosen']  # a switch is the only way to change pet
-        state['last'] = {'action': f['last_action'], 'kind': kind if kind in PETS else 'cat', 'at': f['last_at'],
-                         'where': f.get('last_where') or 'SOMEWHERE'}
+        state['last'] = {'action': f['last_action'], 'kind': kind if kind in PETS else 'cat', 'at': f['last_at']}
     return state
 
 
@@ -2021,38 +1910,20 @@ def pet_panel(state=None, now=None):
     pn, left = pet_card(), 76
     scene, css = pet_scene(kind, last['action'] if awake else 'sleep')  # the same for every view of this state: cached
     verb, when = visit_verb(last), last and ago(last['at'], now)
-    said = ['NO VISITORS YET. BE THE FIRST!']
-    flag_ = None
-    if last:  # one sentence over two lines: on its own, a city read as the counts' place, not the visitor's
-        head, room = 'LAST VISITOR FROM ', 219 - left  # the copy ends before column 220
-        where = last['where']  # 'PARIS, FR', 'FR' or 'PARIS' from api/act.py, or 'SOMEWHERE'
-        city, code = where.split(', ') if ', ' in where else ('', where) if len(where) == 2 else (where, '')
-        flag_ = flag(code)
-        place = city if flag_ else where  # the flag says the country; without one, its code does
-        tail = text_width(' ', '3x5') + 2 + 6 if flag_ else 0  # a word's space, then the flag
-        if text_width(head + place, '3x5') + tail > room and ', ' in place:  # a long city drops the country first
-            place = city
-        while text_width(head + place, '3x5') + tail > room:
-            place = place[:-1].rstrip(' ,')
-        did = f'HAS {verb} · {when}'
-        said = [(head + place).rstrip(), did if text_width(did, '3x5') <= room else f'{verb} · {when}']  # 'PLAYED WITH NIBBLE · 12 DAYS AGO' drops HAS
-    info = card_text(name, f"PROFILE {pet['noun']}", '', ['A PIXEL PET LIVING ON THIS PROFILE.', 'TAP A BUTTON OR SWITCH PET BELOW:',
-                                                         f'THE PAGE RELOADS AND {name} REACTS.'], None, left, pet['accent'], copy=43)  # eight clear rows under the sentence, as on the project cards
-    for i, ln in enumerate(said):  # in the accent from row 23, like card_text's line
-        info |= text(ln, left, 23 + 7 * i, pet['accent'], '3x5')
-    if flag_:
-        x = left + text_width(said[0], '3x5') + text_width(' ', '3x5') + 2
-        info |= {(x + c, 23 + r): v for (c, r), v in flag_.items()}
+    said = f'SOMEONE {verb} {when}.' if last else 'NO VISITS YET.'  # what happened, never who or where from
+    if text_width(said, '3x5') > 219 - left:  # the copy ends before column 220: 'PLAYED WITH NIBBLE 12 DAYS AGO.' drops SOMEONE
+        said = f'{verb} {when}.'
+    info = card_text(name, f"PROFILE {pet['noun']}", said, ['THE BUTTONS BELOW REALLY WORK.', 'PRESS ONE AND THE PAGE RELOADS.',
+                                                           f'EVERYONE WHO VISITS SHARES {name}.'], None, left, pet['accent'])  # laid out as the project cards
     mood, mood_color = ('HAPPY', pet['accent']) if awake else ('ASLEEP', MUTED)
     info |= bezel(226, 4, 62, 56, pet['accent'])  # the stats box: rows 4-59, as tall as the scene allows (PET_CUT)
     info |= text('MOOD', 231, 8, MUTED, '3x5') | text(mood, 283, 8, mood_color, '3x5', anchor='end') | hline(226, 287, 16, RULE)
     for i, (key, label, done, icon, color) in enumerate(ACTIONS):  # the totals, spread over the rest of the screen
         info |= text(done, 231, 25 + i * 13, color, '3x5') | text(str(min(state[key], 9999)), 283, 23 + i * 13, CREAM, anchor='end')
     Name = name.capitalize()
-    visit = (f"Last visit: someone from {last['where'].title()} {verb.lower().replace(name.lower(), Name)}, {when.lower()}."
-             if last else 'No visits yet.')
-    summary = (f"{Name}, an interactive pixel-art {pet['noun'].lower()}. Fed {state['feed']} times, petted {state['pet']} times, "
-               f"played with {state['play']} times. {visit}")
+    visit = f"Someone {verb.lower().replace(name.lower(), Name)} {when.lower()}." if last else 'No visits yet.'
+    summary = (f"{Name} the {pet['noun'].lower()}, a pixel pet you can feed, pet and play with. Fed {state['feed']} times, "
+               f"petted {state['pet']} times, played with {state['play']} times. {visit}")
     art_ = pn.draw(hline(6, 72, 53, RULE)) + scene + pn.draw(info)  # the floor first: the pet's shadow falls on it
     return columns(pn, [], [summary], art_, css, bottom=PET_CUT)[0]
 
@@ -2103,12 +1974,14 @@ def pet_press(do, kind=None):
         (c, half), up, down = head_tile(i), pet_head(i), pet_head(i, True)
         c0, r0, c1, r1 = c - half, 90, c + half, 108
         name = PETS[kind]['name']
-        said, color = f'{name} ON STAGE', PETS[kind]['accent']
+        said, color = f'SWITCHED TO {name}', PETS[kind]['accent']
+        label = f'Switched to {name.capitalize()}'
     else:
         i = [a[0] for a in ACTIONS].index(do)
         up, down = pet_button(i), pet_button(i, True)
         (c0, c1), (r0, r1) = [(6, 88), (101, 188), (201, 286)][i], (70, 85)
         said, color = {'feed': 'FED!', 'pet': 'PETTED!', 'play': 'PLAYED!'}[do], ACTIONS[i][4]
+        label = said[:-1].capitalize()
     pad = 8
     w = max(c1 - c0 + 1, text_width(said)) + 2 * pad
     pn = Panel(w, (r1 - r0 + 1) + 34, width=w * 3 + 30)
@@ -2124,7 +1997,7 @@ def pet_press(do, kind=None):
              f'.down{{animation:down .8s step-end both}}@keyframes down{{0%{{opacity:0}}18%,100%{{opacity:1}}}}'
              f'.plus{{animation:plus .8s steps(5) both}}@keyframes plus{{0%,18%{{opacity:0;transform:translateY({pn.px(5)}px)}}'
              f'19%{{opacity:1;transform:translateY({pn.px(5)}px)}}100%{{opacity:1;transform:none}}}}')
-    return pn.svg(said.replace('!', '').capitalize(), body, style)
+    return pn.svg(label, body, style)
 
 
 def pet_controls():
@@ -2141,7 +2014,7 @@ def pet_controls():
     for i, (k, other) in enumerate(PETS.items()):  # the switch: each head in its fifth
         info |= pet_head(i)
         n = other['name'].capitalize()
-        picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n} on stage.")
+        picks.append(f"Switch to {n} the {other['noun'].lower()}: the page reloads with {n}.")
     body = pn.draw(info)
     return slices(pn, alts, body, top=PET_CUT, bottom=87) + slices(pn, picks, body, top=87)
 
