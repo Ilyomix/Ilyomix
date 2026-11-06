@@ -1005,7 +1005,7 @@ def hero(n=None):
     tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
     typed = title_width('ILYES ABD-LILLAH')  # the width the typing uncovers, a letter at a time
-    lines = [('AT POSITIVE SOLUTION IN TOULOUSE, FRANCE', 'fr'), ('BUILDING INTERFACES AND DESIGN SYSTEMS SINCE 2017.', None),
+    lines = [('AT POSITIVE SOLUTIONS IN TOULOUSE, FRANCE', 'fr'), ('BUILDING INTERFACES AND DESIGN SYSTEMS SINCE 2017.', None),
              ('ON THE SIDE, I MAKE APPS FOR THE MAC AND IPHONE.', None)]
     intro = {}
     for i, (ln, icon) in enumerate(lines):  # the flag ends the line that names the country
@@ -1038,7 +1038,7 @@ def hero(n=None):
              f'@keyframes sweep{{0%{{transform:none;animation-timing-function:steps(52)}}25%,100%{{transform:translateX({pn.px(208)}px)}}}}'
              f'.chase{{animation:chase .9s steps(3) infinite}}@keyframes chase{{to{{transform:translateX(-{pn.px(3)}px)}}}}'
              + scroll('tick', length, 14, pn) + count_css + '.live{animation:live 1.2s step-end infinite}@keyframes live{50%{opacity:0}}')
-    alt = ('Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solution in Toulouse, France. '
+    alt = ('Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solutions in Toulouse, France. '
            'Building interfaces and design systems since 2017. On the side, I make apps for the Mac and iPhone.'
            + ('' if n is None else f' You are visitor number {n}.'))
     still = alt.split(' You are visitor')[0]
