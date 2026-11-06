@@ -1308,29 +1308,68 @@ def lift(pn, downloads=None, now=None):
 
 
 def retrotape(pn):
-    """Retrotape on an iPhone: the viewfinder at sunset, REC blinking, a tracking line rolling down the picture."""
+    """Retrotape on an iPhone: a beach at sunset through a worn tape, the way its filters film. Bold shapes, since the
+    picture is 30 LEDs wide: scanlines, colours bleeding sideways, a tracking band rolling down, noise along the bottom
+    edge, and over it a short OSD, REC top left and the date bottom left. No clock: at this size it was too much."""
+    left, top, wide, tall = 235, 13, 30, 38  # the picture, edge to edge under the island, down to the record button
+    sea, foam, sun_x = top + 21, top + 28, 245  # the first row of the sea (the sun sets on it) and of the shore
+    sky = [(108, 28, 128), (164, 32, 124), (216, 42, 104), (246, 64, 84), (255, 96, 68)]  # solid bands, darkest on top
+    speck = lambda c, r: math.sin(c * 12.9898 + r * 78.233) * 43758.5453 % 1  # the same noise on every build
+    palm = {(x + 249, y + top + 6) for y, line_ in enumerate(
+        ['.......XXXX...', '....XXXXXXXXX.', '.XXXXX.XX.XXXX', 'XXXX..XXXX..XX', 'XX..XXX.X.XX.X', '...XX...X..XX.',
+         '..XX....X...X.', '..X.....XX....', '........XX....', '.........X....', '.........XX...', '.........XX...',
+         '..........X...', '..........XX..', '..........XX..', '..........XX..', '...........XX.', '...........XX.',
+         '...........XX.', '...........XXX', '...........XXX', '...........XXX', '..........XXXX']) for x, k in enumerate(line_) if k == 'X'}
+
+    def scene(x, y):
+        if y < sea:
+            off = math.hypot(x - sun_x, y - sea)
+            if off <= 10 and y not in (sea - 1, sea - 3, sea - 6):  # the sun, sliced near the horizon
+                return mix((255, 236, 130), (255, 130, 44), (y - (sea - 10)) / 10)
+            return sky[min(4, (y - top) * 5 // (sea - top))]
+        if y < foam:
+            return mix((86, 28, 128), (44, 18, 96), (y - sea) / (foam - sea))
+        if y == foam + (x % 9 > 4):
+            return (255, 236, 214)
+        return mix((236, 142, 84), (136, 62, 58), (y - foam) / (top + tall - foam))
+
+    def tape(x, y):
+        if (x, y) in palm:
+            return '#14081A'
+        bleed = (scene(x - 1, y)[0], scene(x, y)[1], scene(x + 1, y)[2])  # red and blue drift apart, as on a worn tape
+        return hexc(mix(bleed, (0, 0, 0), .34) if (y - top) % 2 else bleed)  # scanlines
+
+    picture = {(x, y): tape(x, y) for y in range(top, top + tall) for x in range(left, left + wide)}
+    path = [(10, 6), (7, 9), (9, 5), (5, 7), (6, 3), (3, 5), (4, 2)]  # the sun's path on the water, half widths in two frames
+    glints = [{(x, sea + i): hexc(mix((255, 214, 120), (255, 110, 64), i / (foam - sea - 1)))
+               for i, half in enumerate(path) if not i % 2 or half[k] < 6 for x in range(sun_x - half[k], sun_x + half[k] + 1)
+               if (x, sea + i) not in palm} for k in (0, 1)]
+    band = {(x, top - 1 - r): '#FFFFFF' if r == 1 else '#B9AFCF' for r in range(3) for x in range(left, left + wide)
+            if speck(x // 2, r + 3) > .35}  # the tracking band
+    edge = [{(x, top + tall - 1 - r): ('#FFFFFF', '#5EF2D8', '#FF5A8A')[int(speck(x, r) * 3)]
+             for r in range(2) for x in range(left, left + wide) if speck(x // 2, r + k) > .5} for k in (20, 30)]  # noise, in two frames
+
+    def osd(cells):  # on a hard shadow, legible on anything
+        return {(c + 1, r + 1): '#12070F' for c, r in cells} | cells
+    rec = {(238 + a, top + 3 + b): RETROTAPE for a in range(4) for b in range(4) if a in (1, 2) or b in (1, 2)}  # a round light
+    label = osd(text('REC', 243, top + 2, '#FFFFFF', '3x5') | text('AUG 98', 238, top + 30, '#FFFFFF', '3x5'))
+    button = {(250 + a, 57 + b): RETROTAPE if a * a + b * b <= 5 else '#FFFFFF'  # a thin white ring around the red light
+              for a in range(-5, 6) for b in range(-5, 6) if a * a + b * b <= 5 or 13 <= a * a + b * b <= 21}
+
     def demo(pn):
-        screen = {(235 + c, 5 + r): '#0E0E12' for r in range(58) for c in range(30) if tile_dist(c, r, 30, 58, 5) <= 0}
-        island = slab(241, 7, 18, 4, 2, (6, 6, 8), (6, 6, 8))
-        top, rows = 14, 34  # the picture: 28 LEDs wide, down to the record button
-        sun, sky = (250, top + 21), {}
-        for r in range(rows):
-            for c in range(28):
-                x, y = 236 + c, top + r
-                near = math.hypot(x - sun[0], (y - sun[1]) * 1.1)
-                sky[(x, y)] = hexc(mix((255, 214, 120), mix((255, 150, 56), (122, 30, 64), r / rows), min(1, max(0, (near - 4) / 2))))
-        ground = {(236 + c, top + r): '#160A10' for r in range(rows - 6, rows) for c in range(28)}
-        people = {(x + a, top + rows - 6 - h): '#160A10' for x in (243, 247, 253) for a in range(2) for h in range(1, 6)}  # silhouettes on the shore
-        stamp = text('AUG 98', 238, top + rows - 7 + 1, CREAM, '3x5')
-        button = {(250 + a, 56 + b): RETROTAPE if a * a + b * b <= 9 else '#3A3A40'
-                  for a in range(-4, 5) for b in range(-4, 5) if a * a + b * b <= 18}
-        rec = {(c, r): RETROTAPE for c in (238, 239) for r in (top + 3, top + 4)} | text('REC', 241, top + 2, CREAM, '3x5')
-        roll = hline(236, 263, top, '#FFD9B0')  # a dim line, only over the picture
+        screen = {(235 + c, 5 + r): '#0B0A0E' for r in range(58) for c in range(30) if tile_dist(c, r, 30, 58, 5) <= 0}
+        island = slab(241, 7, 18, 4, 2, (2, 2, 3), (2, 2, 3))
         css = (f'.rec{{animation:rec 1.2s step-end infinite}}@keyframes rec{{50%{{opacity:0}}}}'
-               f'.roll{{opacity:.45;animation:roll 5s steps({rows}) infinite}}@keyframes roll{{to{{transform:translateY({pn.px(rows)}px)}}}}')
-        return (pn.draw(iphone(RETROTAPE) | screen | island | sky | ground | people | stamp | button)
-                + f'<clipPath id="pic"><rect {pn.box(236, top, 28, rows)}/></clipPath>'
-                  f'<g clip-path="url(#pic)"><g class="roll">{pn.draw(roll)}</g></g><g class="rec">{pn.draw(rec)}</g>'), css
+               f'.roll{{animation:roll 4.5s steps({tall + 3}) infinite}}@keyframes roll{{to{{transform:translateY({pn.px(tall + 3)}px)}}}}'
+               f'.jit{{animation:jit 3.6s step-end infinite}}@keyframes jit{{88%{{transform:translateX({pn.px(1)}px)}}'
+               f'91%{{transform:translateX(-{pn.px(1)}px)}}94%{{transform:none}}}}'
+               f'.a{{animation:a .8s step-end infinite}}@keyframes a{{50%{{opacity:0}}}}'
+               f'.b{{animation:b .8s step-end infinite}}@keyframes b{{0%{{opacity:0}}50%{{opacity:1}}}}')
+        return (pn.draw(iphone(RETROTAPE) | screen | island | button)
+                + f'<clipPath id="pic"><rect {pn.box(left, top, wide, tall)}/></clipPath><g clip-path="url(#pic)">'
+                  f'<g class="jit">{pn.draw(picture)}<g class="a">{pn.draw(glints[0])}</g><g class="b">{pn.draw(glints[1])}</g></g>'
+                  f'<g class="a">{pn.draw(edge[0])}</g><g class="b">{pn.draw(edge[1])}</g><g class="roll">{pn.draw(band)}</g></g>'
+                + pn.draw(label) + f'<g class="rec">{pn.draw(osd(rec))}</g>'), css
     return project(pn, 'Retrotape, for iPhone: your iPhone becomes a 90s camcorder, live. 20 filters, each with its own camera, '
                    'with REC blinking and the date on the picture. Made with Kotlin, Compose Multiplatform and Metal. On the App Store.',
                    'RETROTAPE', 'IOS',
