@@ -10,7 +10,7 @@ const translations = {
     'about.text':
       'Frontend engineer with 8+ years of experience, specializing in building interfaces that feel as good as they look. I care deeply about design systems, interaction details, and the kind of polish that makes software feel intentional.',
     'about.current':
-      'Currently engineering at Positive Solution \u00b7 Building Cadran & SubSnooze on the side',
+      'Currently engineering at Positive Solutions \u00b7 Building Cadran & SubSnooze on the side',
     'hero.scroll': 'Scroll',
     'experience.label': '02 \u2014 Experience',
     'exp.1.role': 'Lead Frontend Engineer',
@@ -63,7 +63,7 @@ const translations = {
     'about.text':
       "Ing\u00e9nieur frontend avec 8+ ans d\u2019exp\u00e9rience, sp\u00e9cialis\u00e9 dans la cr\u00e9ation d\u2019interfaces aussi agr\u00e9ables \u00e0 utiliser qu\u2019\u00e0 regarder. Je porte une attention particuli\u00e8re aux design systems, aux d\u00e9tails d\u2019interaction et \u00e0 cette finition qui rend un logiciel intentionnel.",
     'about.current':
-      'Actuellement ing\u00e9nieur chez Positive Solution \u00b7 Cadran & SubSnooze en parall\u00e8le',
+      'Actuellement ing\u00e9nieur chez Positive Solutions \u00b7 Cadran & SubSnooze en parall\u00e8le',
     'hero.scroll': 'Scroll',
     'experience.label': '02 \u2014 Parcours',
     'exp.1.role': 'Lead Frontend Engineer',
