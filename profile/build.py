@@ -103,7 +103,7 @@ FONTS = {'5x7': FONT_5X7, '3x5': FONT_3X5, '7x9': FONT_7X9}
 
 BG, OFF = '#030201', '#16110C'
 CREAM, MUTED, RULE = '#FFF1D6', '#BDB3A1', '#3A3128'   # RULE is decoration only, never text
-CADRAN, LIFT, BOARD, PET = '#FF7B00', '#7FA6FF', '#FF6A00', '#FF8FB0'  # Cadran: cadranapp.com's --color-accent
+CADRAN, RETROTAPE, LIFT, BOARD, PET = '#FF7B00', '#FF3B2F', '#7FA6FF', '#FF6A00', '#FF8FB0'  # Cadran: cadranapp.com's --color-accent; Retrotape: its REC light
 GREEN, RED = '#089981', '#F23645'
 INK = set()  # every colour used for text, checked against WCAG AA at the end
 
@@ -450,7 +450,7 @@ def outline(col, row, size, color, radius=.22):
 
 # --- titles: pre-rendered by `build.py titles` so CI needs neither Pillow nor the font ----
 
-TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'GITHUB']
+TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'RETROTAPE', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'GITHUB']
 
 
 def big(s, col, row, color, gap=2, size='counter'):
@@ -941,6 +941,8 @@ STACK_ICONS = {
         {'C': '#7FA6FF'}),
     'cadran': (['..RRRRR..', '.R.....R.', 'R.R...R.R', 'R..R.R..R', 'R...R...R', '.O.....O.', '..OOOOO..'],
         {'R': '#FFF6EC', 'O': '#F6A640'}),
+    'retrotape': (['..WWWWWWW', '.WW....WW', '.WW.RR.WW', '.WWWWWWW.', 'WW..WW...', 'WW...WW..', 'WW....WW.'],
+        {'W': '#FFF1D6', 'R': '#FF3B2F'}),
     'lift': (['.X.....X.', 'XX.....XX', 'XX.....XX', 'XXXXXXXXX', 'XX.....XX', 'XX.....XX', '.X.....X.'],
         {'X': '#7FA6FF'}),
     'led-board': (['........P', '......P.O', '......O.O', '....P.O.O', '....O.O.O', '..P.O.O.O', 'P.O.O.O.O'],
@@ -998,7 +1000,7 @@ def hero(n=None):
     pn = Panel(284, 101)  # rows: border 0, counter housing 5-23, photo and text 28-79, rule 84, ticker 89-95, border 100: 4 clear rows between each
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
-             ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('LIFT', LIFT, 'lift'),
+             ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('RETROTAPE', RETROTAPE, 'retrotape'), ('LIFT', LIFT, 'lift'),
              ('CRYPTO LED BOARD', BOARD, 'led-board')]
     tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
@@ -1071,12 +1073,12 @@ def tile(key, col, row, accent):
 
 
 def projects_mark(col, row, size=16):
-    """The projects heading's icon, a size below the app icons: three app cards (Cadran, Lift, LED Board)
+    """The projects heading's icon, a size below the app icons: four app cards (Cadran, Retrotape, Lift, LED Board)
     stacked down to the right on a dark tile, each lit along its top edge and cut from the one behind."""
     tile_ = '#1C120A'
     cells = {(col + c, row + r): tile_ for r in range(size) for c in range(size) if rounded((c + .5) / size, (r + .5) / size, .22)}
-    for i, color in enumerate((CADRAN, LIFT, BOARD)):
-        x0, y0 = col + 2 + 3 * i, row + 2 + 3 * i
+    for i, color in enumerate((CADRAN, RETROTAPE, LIFT, BOARD)):
+        x0, y0 = col + 2 + 2 * i, row + 2 + 2 * i
         if i:  # a one-LED gap from the card behind
             cells |= {(x0 + c, y0 + r): tile_ for r in range(-1, 7) for c in range(-1, 7) if (x0 + c, y0 + r) in cells}
         cells |= {(x0 + c, y0 + r): hexc(mix(rgb(color), (255, 255, 255), .4)) if r == 0 else color
@@ -1116,18 +1118,18 @@ def badges(pn):
 
 
 def projects_card(downloads=None, now=None, only=None):
-    """The projects as one card: the heading, then Cadran with its badges under it, Lift and LED Board. Each band
+    """The projects as one card: the heading, then Cadran with its badges under it, Retrotape, Lift and LED Board. Each band
     is an image of its own (or a line of them) so README.md can link it; api/cadran.py and api/lift.py serve theirs
     live (the download count, the clocks), the build writes the rest. The live bands come as (copy, live part),
     the badges as (Product Hunt, awesome-mac, the rest), see columns. `only` draws just that band, numbered as
-    listed below: the badges come last so the live bands keep their numbers."""
-    pn = Panel(284, 32 + 72 + 31 + 76 + 76)
+    listed below: Retrotape and the badges come last so the live bands keep their numbers."""
+    pn = Panel(284, 32 + 72 + 31 + 76 + 76 + 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
-               | text('MY PROJECTS', 32, 8, CREAM) | text('THREE APPS I DESIGNED AND BUILT ON MY OWN.', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
+               | text('MY PROJECTS', 32, 8, CREAM) | text('FOUR APPS I DESIGNED AND BUILT ON MY OWN.', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
     bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
-        (lambda b: ('My projects: three apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
-        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 135, 211, DEVICE_LIVE),
-        (lambda b: board(b), 211, None, None), (badges, 104, 135, BADGE_CUTS)]
+        (lambda b: ('My projects: four apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
+        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 211, 287, DEVICE_LIVE),
+        (lambda b: board(b), 287, None, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
     out = []
     for i, (make, top, bottom, cuts) in enumerate(bands):
         if only is None or i == only:
@@ -1303,6 +1305,38 @@ def lift(pn, downloads=None, now=None):
                    ['A MUSCLE-BUILDING PROGRAM PLANNED BACK', 'FROM YOUR GOAL DATE. THE REST TIMER RUNS',
                     'ON THE LOCK SCREEN AND DYNAMIC ISLAND.'],
                    'REACT, CAPACITOR, ACTIVITYKIT', link, LIFT, art('lift', 6, 6, .22), demo)
+
+
+def retrotape(pn):
+    """Retrotape on an iPhone: the viewfinder at sunset, REC blinking, a tracking line rolling down the picture."""
+    def demo(pn):
+        screen = {(235 + c, 5 + r): '#0E0E12' for r in range(58) for c in range(30) if tile_dist(c, r, 30, 58, 5) <= 0}
+        island = slab(241, 7, 18, 4, 2, (6, 6, 8), (6, 6, 8))
+        top, rows = 14, 34  # the picture: 28 LEDs wide, down to the record button
+        sun, sky = (250, top + 21), {}
+        for r in range(rows):
+            for c in range(28):
+                x, y = 236 + c, top + r
+                near = math.hypot(x - sun[0], (y - sun[1]) * 1.1)
+                sky[(x, y)] = hexc(mix((255, 214, 120), mix((255, 150, 56), (122, 30, 64), r / rows), min(1, max(0, (near - 4) / 2))))
+        ground = {(236 + c, top + r): '#160A10' for r in range(rows - 6, rows) for c in range(28)}
+        people = {(x + a, top + rows - 6 - h): '#160A10' for x in (243, 247, 253) for a in range(2) for h in range(1, 6)}  # silhouettes on the shore
+        stamp = text('AUG 98', 238, top + rows - 7 + 1, CREAM, '3x5')
+        button = {(250 + a, 56 + b): RETROTAPE if a * a + b * b <= 9 else '#3A3A40'
+                  for a in range(-4, 5) for b in range(-4, 5) if a * a + b * b <= 18}
+        rec = {(c, r): RETROTAPE for c in (238, 239) for r in (top + 3, top + 4)} | text('REC', 241, top + 2, CREAM, '3x5')
+        roll = hline(236, 263, top, '#FFD9B0')  # a dim line, only over the picture
+        css = (f'.rec{{animation:rec 1.2s step-end infinite}}@keyframes rec{{50%{{opacity:0}}}}'
+               f'.roll{{opacity:.45;animation:roll 5s steps({rows}) infinite}}@keyframes roll{{to{{transform:translateY({pn.px(rows)}px)}}}}')
+        return (pn.draw(iphone(RETROTAPE) | screen | island | sky | ground | people | stamp | button)
+                + f'<clipPath id="pic"><rect {pn.box(236, top, 28, rows)}/></clipPath>'
+                  f'<g clip-path="url(#pic)"><g class="roll">{pn.draw(roll)}</g></g><g class="rec">{pn.draw(rec)}</g>'), css
+    return project(pn, 'Retrotape, for iPhone: your iPhone becomes a 90s camcorder, live. 20 filters, each with its own camera, '
+                   'with REC blinking and the date on the picture. Made with Kotlin, Compose Multiplatform and Metal. On the App Store.',
+                   'RETROTAPE', 'IOS',
+                   ['YOUR IPHONE BECOMES A 90S CAMCORDER, LIVE:', '20 FILTERS, EACH WITH ITS OWN CAMERA, WITH',
+                    'REC BLINKING AND THE DATE ON THE PICTURE.'],
+                   'KOTLIN, COMPOSE MULTIPLATFORM, METAL', 'ON THE APP STORE ↗', RETROTAPE, art('retrotape', 6, 6, .22), demo)
 
 
 def board(pn):
@@ -2113,12 +2147,13 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_text, _, lift_copy, _, led_board, *badge_strip = projects_card(now=STILL)
+    heading, cadran_text, _, lift_copy, _, led_board, retrotape_band, *badge_strip = projects_card(now=STILL)
     write('projects-2-badge', badge_strip)
     (IMG / 'projects-1.svg').write_text(heading)
     for name, svg in (('projects-2-copy', cadran_text), ('projects-3-copy', lift_copy)):
         (IMG / f'{name}.svg').write_text(svg)
     (IMG / 'projects-4.svg').write_text(led_board)
+    (IMG / 'projects-5.svg').write_text(retrotape_band)
     greeting, _, im, header = hero()
     for name, svg in (('hero-greeting', greeting), ('hero-im', im), ('hero-body', header)):
         (IMG / f'{name}.svg').write_text(svg)
