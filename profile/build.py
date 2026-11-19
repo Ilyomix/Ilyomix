@@ -3,6 +3,9 @@
 
     python3 profile/build.py                         rebuild every panel
     python3 profile/build.py art AVATAR LIFT_ICON    re-import pixel art from images (needs Pillow)
+    python3 profile/build.py icon NAME IMAGE [N]     import an app icon as 24 LEDs in N colours, on a dark tile where
+                                                     it is transparent (needs Pillow): Retrotape's, Glowback's
+    python3 profile/scenes.py                        redraw the nature films on Glowback's monitor (needs Pillow)
     api/hero.py, api/pet.py, api/act.py              serve `hero` (with the visitor number) and `pet_panel` live from Vercel
     python3 profile/build.py stats                   refresh github.json (needs the gh CLI, logged in or with GH_TOKEN)
     python3 profile/build.py titles [FONT]           re-render the titles (needs Pillow; JetBrains Mono,
@@ -510,29 +513,6 @@ def bezel(col, row, w, h, color):
     return cells
 
 
-def glowback_icon(col, row, size=24):
-    """Glowback's app icon, LED for LED: the glowing ring of its Windows executable (the same formula as
-    glowback.icon_pixels: blue at the top, violet and pink down the sides, orange at the bottom, a faint glow
-    inside), over the panel instead of a transparent background. No tile: the app icon has none."""
-    stops = ((0.0, (64, 112, 255)), (0.35, (168, 76, 255)), (0.7, (255, 84, 128)), (1.0, (255, 170, 60)))
-
-    def grad(t):
-        for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
-            if t <= t1:
-                return mix(c0, c1, (t - t0) / (t1 - t0))
-        return stops[-1][1]
-    cells, c = {}, size / 2
-    for y in range(size):
-        for x in range(size):
-            dx, dy = x + .5 - c, y + .5 - c
-            r = math.hypot(dx, dy) / c
-            alpha = min(1.0, max(0.0, 1.0 - abs(r - .66) / .2) ** .8 * 1.6 + max(0.0, 1.0 - r) * .35)
-            if alpha > .04:
-                t = (math.atan2(dx, -dy) / (2 * math.pi)) % 1.0
-                cells[(col + x, row + y)] = hexc(mix(rgb(BG), grad(1.0 - abs(2 * t - 1.0)), alpha))
-    return cells
-
-
 # The profile pets, drawn on a 26x24 grid (each part as its first row and its rows), doubled with scale2x and lit
 # at LED size (see `lit`), so their shading and outline are one LED fine. G fur, S its markings, W cream, D dark
 # fur, P inner ear, R collar or scarf, Y bell, tag or feet; K, H, N and C draw the eyes, nose and cheeks of the
@@ -1011,8 +991,8 @@ def hero(n=None):
     pn = Panel(284, 101)  # rows: border 0, counter housing 5-23, photo and text 28-79, rule 84, ticker 89-95, border 100: 4 clear rows between each
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
-             ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('RETROTAPE', RETROTAPE, 'retrotape'), ('LIFT', LIFT, 'lift'),
-             ('GLOWBACK', GLOWBACK, 'glowback')]
+             ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('RETROTAPE', RETROTAPE, 'retrotape'),
+             ('GLOWBACK', GLOWBACK, 'glowback'), ('LIFT', LIFT, 'lift')]
     tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
     typed = title_width('ILYES ABD-LILLAH')  # the width the typing uncovers, a letter at a time
@@ -1069,11 +1049,11 @@ def card_text(name, tag, sub, lines, foot, left, accent, copy=36):
     return cells | (text(foot, left, 61, accent, '3x5') if foot else {})
 
 
-def project(pn, alt, name, tag, lines, tech, cta, accent, icon, demo, framed=True):
+def project(pn, alt, name, tag, lines, tech, cta, accent, icon, demo):
     """One band of the projects card, 76 rows on `pn`: a 24-LED icon level with the title's top, then name,
     link, description and stack from column 40; on the right (columns 220-283) `demo` draws the app running
     on its device. Returns (alt, body, css)."""
-    cells = ((halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent)) if framed else icon) | card_text(name, tag, cta, lines, tech, 40, accent)
+    cells = halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent) | card_text(name, tag, cta, lines, tech, 40, accent)
     body, css = demo(pn.at_row(3))  # the device 3 rows down, so its light stays clear of the rule above
     return alt, pn.draw(cells | {(c, 0): RULE for c in range(0, pn.cols, 2)}) + body, css  # a dotted rule over each project
 
@@ -1084,11 +1064,11 @@ def tile(key, col, row, accent):
 
 
 def projects_mark(col, row, size=16):
-    """The projects heading's icon, a size below the app icons: four app cards (Cadran, Retrotape, Lift, Glowback)
+    """The projects heading's icon, a size below the app icons: four app cards (Cadran, Retrotape, Glowback, Lift)
     stacked down to the right on a dark tile, each lit along its top edge and cut from the one behind."""
     tile_ = '#1C120A'
     cells = {(col + c, row + r): tile_ for r in range(size) for c in range(size) if rounded((c + .5) / size, (r + .5) / size, .22)}
-    for i, color in enumerate((CADRAN, RETROTAPE, LIFT, GLOWBACK)):
+    for i, color in enumerate((CADRAN, RETROTAPE, GLOWBACK, LIFT)):
         x0, y0 = col + 2 + 2 * i, row + 2 + 2 * i
         if i:  # a one-LED gap from the card behind
             cells |= {(x0 + c, y0 + r): tile_ for r in range(-1, 7) for c in range(-1, 7) if (x0 + c, y0 + r) in cells}
@@ -1129,7 +1109,7 @@ def badges(pn):
 
 
 def projects_card(downloads=None, now=None, only=None):
-    """The projects as one card: the heading, then Cadran with its badges under it, Retrotape, Lift and Glowback. Each band
+    """The projects as one card: the heading, then Cadran with its badges under it, Retrotape, Glowback and Lift. Each band
     is an image of its own (or a line of them) so README.md can link it; api/cadran.py and api/lift.py serve theirs
     live (the download count, the clocks), the build writes the rest. The live bands come as (copy, live part),
     the badges as (Product Hunt, awesome-mac, the rest), see columns. `only` draws just that band, numbered as
@@ -1139,8 +1119,8 @@ def projects_card(downloads=None, now=None, only=None):
                | text('MY PROJECTS', 32, 8, CREAM) | text('FOUR APPS I DESIGNED AND BUILT ON MY OWN.', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
     bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
         (lambda b: ('My projects: four apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
-        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 211, 287, DEVICE_LIVE),
-        (lambda b: glowback(b), 287, None, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
+        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 287, None, DEVICE_LIVE),
+        (glowback, 211, 287, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
     out = []
     for i, (make, top, bottom, cuts) in enumerate(bands):
         if only is None or i == only:
@@ -1389,41 +1369,65 @@ def retrotape(pn):
                    'KOTLIN, COMPOSE MULTIPLATFORM, METAL', 'ON THE APP STORE ↗', RETROTAPE, art('retrotape', 6, 6, .22), demo)
 
 
+GLOWBACK_FILMS = ('mountains', 'lagoon', 'dunes', 'aurora')  # what Glowback's monitor plays, in order (scenes.py)
+
+
 def glowback(pn):
-    """Glowback on a desktop monitor: the LEDs behind it light the wall with the colours of the picture's edges,
-    fading between two pictures. Each LED of the glow takes the colour of the nearest point of the screen."""
-    sx, sy, sw, sh = 225, 5, 54, 33  # the screen, inside a 58x37 bezel at (223, 3), as on `monitor`
-    pictures = [[(40, 96, 255), (150, 72, 255), (255, 138, 48)], [(24, 196, 200), (236, 72, 156), (255, 204, 70)]]
+    """Glowback on a desktop monitor playing nature films (scenes.py draws them into art.json): the LEDs on its back
+    light the wall with the colours along the picture's edges, so the light changes with each film as it fades into the
+    next. The monitor sits lower than the other devices: its light starts level with the icon, six LEDs above the
+    bezel, clear of the rule over the band."""
+    bx, by, bw, bh, reach = 225, 9, 50, 30, 6  # the bezel, with the demo 3 rows down; the 46x26 screen is 2 LEDs inside it
+    sx, sy, sw, sh = bx + 2, by + 2, bw - 4, bh - 4
+    stand = (slab(246, by + bh, 8, 6, 0, (60, 56, 62), (36, 34, 40))          # neck
+             | slab(238, by + bh + 6, 24, 2, 0, (70, 66, 72), (40, 38, 44)))  # foot
 
-    def scene(k, x, y):
-        a, b_, c = pictures[k]
-        u, v = (x - sx) / (sw - 1), (y - sy) / (sh - 1)
-        col = mix(a, b_, u * 2) if u < .5 else mix(b_, c, u * 2 - 1)
-        return mix(col, (10, 8, 22), .45 * v * v)  # darker towards the bottom, like a scene
+    def film(name):  # one RGB per LED of the screen
+        a = art_data()[f'scene-{name}']
+        assert (a['w'], a['h']) == (sw, sh), name
+        return [[rgb(a['palette'][int(k, 36)]) for k in line_] for line_ in a['rows']]
 
-    def layer(k):
-        screen = {(x, y): hexc(scene(k, x, y)) for y in range(sy, sy + sh) for x in range(sx, sx + sw)}
-        glow = {}
-        for r in range(3 - 7, 3 + 37 + 7):
-            for c in range(223 - 7, min(284, 223 + 58 + 7)):
-                d = tile_dist(c - 223, r - 3, 58, 37, 2)
-                if 1 < d <= 7:
-                    near = scene(k, min(max(c, sx), sx + sw - 1), min(max(r, sy), sy + sh - 1))
-                    glow[(c, r)] = hexc(mix(rgb(BG), near, .62 * (1 - (math.ceil(d) - 2) / 6)))
-        return glow | screen
+    def zone(px, x, y):
+        """What the LED behind the screen's edge at (x, y) shows: the picture's average next to it, 4 LEDs deep and 7
+        along the edge, brightened the way Glowback brightens it (never darker, at most 1.5 times)."""
+        xs, ys = range(max(0, x - 3), min(sw, x + 4)), range(max(0, y - 3), min(sh, y + 4))
+        avg = [sum(px[j][i][k] for j in ys for i in xs) / (len(xs) * len(ys)) for k in range(3)]
+        gain = min(1.5, max(1., 200 / max(*avg, 1)))
+        return tuple(v * gain for v in avg)
+
+    def layer(name):
+        """One film: the picture, and the wall it lights, in steps that dim away from the bezel."""
+        px, wall = film(name), {}
+        for r in range(by - reach, by + bh + reach):
+            for c in range(bx - reach, bx + bw + reach):
+                d = tile_dist(c - bx, r - by, bw, bh, 2)
+                if 0 < d <= reach and (c, r) not in stand:
+                    near = zone(px, min(max(c - sx, 0), sw - 1), min(max(r - sy, 0), sh - 1))
+                    lit = mix(rgb(BG), near, .62 * (1 - (math.ceil(d) - 1) / reach))
+                    wall[(c, r)] = hexc([round(v / 16) * 16 for v in lit])  # coarse steps: fewer colours, fewer paths
+        return wall | {(sx + x, sy + y): hexc(px[y][x]) for y in range(sh) for x in range(sw)}
 
     def demo(pn):
-        tint, dark = rgb(GLOWBACK), rgb(BG)
-        body = (slab(240, 47, 24, 2, 0, (70, 66, 72), (40, 38, 44)) | slab(248, 40, 8, 7, 0, (60, 56, 62), (36, 34, 40))
-                | slab(223, 3, 58, 37, 2, mix((84, 80, 88), tint, .25), mix((34, 32, 38), dark, .3)))
-        css = '.gb{animation:gb 8s ease-in-out infinite alternate}@keyframes gb{0%,20%{opacity:1}80%,100%{opacity:0}}'
-        return pn.draw(body | layer(1)) + f'<g class="gb">{pn.draw(layer(0))}</g>', css
+        body = slab(bx, by, bw, bh, 2, mix((84, 80, 88), rgb(GLOWBACK), .25), mix((34, 32, 38), rgb(BG), .3))
+        first, *rest = [layer(name) for name in GLOWBACK_FILMS]
+        hold = 4  # seconds per film, its fade in included: each fades in over the one before, the last back to the first
+        cycle = hold * len(GLOWBACK_FILMS)
+        at = lambda t: num(t * 100 / cycle)  # noqa: E731
+        css = ''
+        for i in range(1, len(GLOWBACK_FILMS)):
+            on = f'0%,{at(i * hold - 1)}%{{opacity:0}}'
+            if i < len(rest):  # off behind the last film once it is in
+                keys = f'{on}{at(i * hold)}%,{at(cycle - hold)}%{{opacity:1}}{at(cycle - hold + 1)}%,100%{{opacity:0}}'
+            else:
+                keys = f'{on}{at(i * hold)}%,{at(cycle - 1)}%{{opacity:1}}100%{{opacity:0}}'
+            css += f'.gb{i}{{opacity:0;animation:gb{i} {cycle}s ease-in-out infinite}}@keyframes gb{i}{{{keys}}}'
+        return pn.draw(stand | body | first) + ''.join(f'<g class="gb{i}">{pn.draw(l_)}</g>' for i, l_ in enumerate(rest, 1)), css
     return project(pn, 'Glowback, for Windows: ambient light for the RGB LEDs on the back of your monitor. Every LED follows the '
                    'picture in front of it, live. Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
                    'GLOWBACK', 'WINDOWS',
                    ['AMBIENT LIGHT FOR THE RGB LEDS ON THE', 'BACK OF YOUR MONITOR: EVERY LED FOLLOWS',
                     'THE PICTURE IN FRONT OF IT, LIVE.'],
-                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, glowback_icon(6, 6), demo, framed=False)
+                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
 
 
 GH = '#39D353'  # GitHub's contribution green
@@ -2140,14 +2144,33 @@ def drums(pn, n, col, row, count=7, w=11, h=15, gap=2):
 DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 
+def icon_grid(im, size, colors, kmeans=0):
+    """An image as size x size LEDs in at most `colors` flat colours, as art.json keeps pixel art; `kmeans` passes
+    refine the palette, which keeps a smooth gradient from leaving odd LEDs where two shades meet."""
+    from PIL import Image
+    im = im.convert('RGB').resize((size, size), Image.LANCZOS).quantize(colors, kmeans=kmeans).convert('RGB')
+    palette = sorted({hexc(im.getpixel((x, y))) for y in range(size) for x in range(size)})
+    rows = [''.join(DIGITS[palette.index(hexc(im.getpixel((x, y))))] for x in range(size)) for y in range(size)]
+    return {'w': size, 'h': size, 'palette': palette, 'rows': rows}
+
+
+def import_icon(name, path, colors=20, tile=('#202022', '#111112')):
+    """An app icon as 24 LEDs, imported like Lift's: what the image leaves transparent (Glowback's ring has no
+    background) sits on a dark tile, shaded top to bottom like Retrotape's. An .ico gives its largest size."""
+    from PIL import Image
+    im = Image.open(path)
+    if im.format == 'ICO':
+        im.size = max(im.info['sizes'])
+    im = im.convert('RGBA')
+    back = Image.new('RGBA', im.size)
+    for y in range(im.size[1]):
+        back.paste(tuple(round(v) for v in mix(rgb(tile[0]), rgb(tile[1]), y / (im.size[1] - 1))) + (255,), (0, y, im.size[0], y + 1))
+    save_art(**{name: icon_grid(Image.alpha_composite(back, im), 24, colors, kmeans=4)})
+
+
 def import_art(avatar, lift_icon):
     from PIL import Image, ImageEnhance
-
-    def grid(im, size, colors):
-        im = im.convert('RGB').resize((size, size), Image.LANCZOS).quantize(colors).convert('RGB')
-        palette = sorted({hexc(im.getpixel((x, y))) for y in range(size) for x in range(size)})
-        rows = [''.join(DIGITS[palette.index(hexc(im.getpixel((x, y))))] for x in range(size)) for y in range(size)]
-        return {'w': size, 'h': size, 'palette': palette, 'rows': rows}
+    grid = icon_grid
     face = Image.open(avatar).convert('RGB')
     w = face.size[0]
     face = face.crop((int(.2 * w), 0, int(.9 * w), int(.7 * w)))  # head and shoulders
@@ -2234,6 +2257,8 @@ if __name__ == '__main__':
     cmd = sys.argv[1:2]
     if cmd == ['art']:
         import_art(sys.argv[2], sys.argv[3])
+    elif cmd == ['icon']:
+        import_icon(sys.argv[2], sys.argv[3], *(int(n) for n in sys.argv[4:5]))
     elif cmd == ['stats']:
         import_stats()
     elif cmd == ['titles']:
