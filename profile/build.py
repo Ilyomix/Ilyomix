@@ -1424,7 +1424,8 @@ def glowback(pn):
             css += f'.gb{i}{{opacity:0;animation:gb{i} {cycle}s ease-in-out infinite}}@keyframes gb{i}{{{keys}}}'
         return pn.draw(stand | body | first) + ''.join(f'<g class="gb{i}">{pn.draw(l_)}</g>' for i, l_ in enumerate(rest, 1)), css
     return project(pn, 'Glowback, for Windows: ambient light for the RGB LEDs on the back of your monitor. Every LED follows the '
-                   'picture in front of it, live. Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
+                   'picture in front of it, live. Works with Home Assistant, and through it with Google Assistant, Alexa and Siri. '
+                   'Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
                    'GLOWBACK', 'WINDOWS',
                    ['AMBIENT LIGHT FOR THE RGB LEDS ON THE', 'BACK OF YOUR MONITOR: EVERY LED FOLLOWS',
                     'THE PICTURE IN FRONT OF IT, LIVE.'],
