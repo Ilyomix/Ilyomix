@@ -103,7 +103,7 @@ FONTS = {'5x7': FONT_5X7, '3x5': FONT_3X5, '7x9': FONT_7X9}
 
 BG, OFF = '#030201', '#16110C'
 CREAM, MUTED, RULE = '#FFF1D6', '#BDB3A1', '#3A3128'   # RULE is decoration only, never text
-CADRAN, RETROTAPE, LIFT, BOARD, PET = '#FF7B00', '#FF3B2F', '#7FA6FF', '#FF6A00', '#FF8FB0'  # Cadran: cadranapp.com's --color-accent; Retrotape: its REC light
+CADRAN, RETROTAPE, LIFT, GLOWBACK, PET = '#FF7B00', '#FF3B2F', '#7FA6FF', '#9B7BFF', '#FF8FB0'  # Cadran: cadranapp.com's --color-accent; Retrotape: its REC light
 GREEN, RED = '#089981', '#F23645'
 INK = set()  # every colour used for text, checked against WCAG AA at the end
 
@@ -450,7 +450,7 @@ def outline(col, row, size, color, radius=.22):
 
 # --- titles: pre-rendered by `build.py titles` so CI needs neither Pillow nor the font ----
 
-TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'RETROTAPE', 'LIFT', 'LED BOARD', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'GITHUB']
+TITLES = ['ILYES ABD-LILLAH', 'CADRAN', 'RETROTAPE', 'LIFT', 'GLOWBACK', 'BYTE', 'PIXEL', 'NIBBLE', 'HEX', 'SUDO', 'PING', 'GITHUB']
 
 
 def big(s, col, row, color, gap=2, size='counter'):
@@ -510,15 +510,26 @@ def bezel(col, row, w, h, color):
     return cells
 
 
-def board_icon(col, row, size=24):
-    """Crypto LED Board's icon: its 9x9 pixel chart, one icon pixel = 2x2 LEDs."""
-    pix = [(0, 7), (1, 6), (2, 5), (3, 5), (4, 6), (5, 5), (5, 4), (6, 3), (7, 2), (8, 1), (6, 1), (7, 1), (8, 2), (8, 3)]
-    cells = {(col + c, row + r): '#1C120A' for r in range(size) for c in range(size)
+def glowback_icon(col, row, size=24):
+    """Glowback's icon: a ring of light going from blue through violet to orange, on a dark tile."""
+    stops = [(0, (76, 125, 255)), (.35, (155, 123, 255)), (.68, (232, 95, 168)), (1, (255, 154, 61))]
+
+    def hue(t):
+        for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
+            if t <= t1:
+                return mix(c0, c1, (t - t0) / (t1 - t0))
+        return stops[-1][1]
+    cells = {(col + c, row + r): '#120E1C' for r in range(size) for c in range(size)
              if rounded((c + .5) / size, (r + .5) / size, .22)}
-    for px_, py in pix:
-        for i in range(2):
-            for j in range(2):
-                cells[(col + 3 + px_ * 2 + i, row + 3 + py * 2 + j)] = BOARD
+    for r in range(size):
+        for c in range(size):
+            dx, dy = c + .5 - size / 2, r + .5 - size / 2
+            d = math.hypot(dx, dy)
+            t = 1 - abs((math.atan2(dx, -dy) / (2 * math.pi)) % 1 * 2 - 1)  # 0 at the top, 1 at the bottom
+            if 5.6 <= d <= 8.4:
+                cells[(col + c, row + r)] = hexc(hue(t))
+            elif 8.4 < d <= 9.6 or 4.4 <= d < 5.6:  # its glow, a step dimmer
+                cells[(col + c, row + r)] = hexc(mix((18, 14, 28), hue(t), .35))
     return cells
 
 
@@ -945,8 +956,8 @@ STACK_ICONS = {
         {'W': '#FFF1D6', 'R': '#FF3B2F'}),
     'lift': (['.X.....X.', 'XX.....XX', 'XX.....XX', 'XXXXXXXXX', 'XX.....XX', 'XX.....XX', '.X.....X.'],
         {'X': '#7FA6FF'}),
-    'led-board': (['........P', '......P.O', '......O.O', '....P.O.O', '....O.O.O', '..P.O.O.O', 'P.O.O.O.O'],
-        {'O': '#FF6A00', 'P': '#FFB46A'}),
+    'glowback': (['..BBVVV..', '.B.....V.', 'B.......P', 'B.......P', 'C.......O', '.C.....O.', '..CCOOO..'],
+        {'B': '#4C7DFF', 'V': '#9B7BFF', 'P': '#E85FA8', 'O': '#FF9A3D', 'C': '#2EC8D8'}),
 }
 
 # 24-LED tile for the GitHub card, like the app icons: (rows, palette).
@@ -1001,7 +1012,7 @@ def hero(n=None):
     stack = [('REACT', CREAM, 'react'), ('TYPESCRIPT', CREAM, 'typescript'), ('VUE', CREAM, 'vue'), ('NEXT.JS', CREAM, 'nextjs'),
              ('SWIFT', CREAM, 'swift'), ('SWIFTUI', CREAM, 'swiftui'), ('DESIGN SYSTEMS', MUTED, 'design-systems'),
              ('ACCESSIBILITY', MUTED, 'accessibility'), ('CADRAN', CADRAN, 'cadran'), ('RETROTAPE', RETROTAPE, 'retrotape'), ('LIFT', LIFT, 'lift'),
-             ('CRYPTO LED BOARD', BOARD, 'led-board')]
+             ('GLOWBACK', GLOWBACK, 'glowback')]
     tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
     typed = title_width('ILYES ABD-LILLAH')  # the width the typing uncovers, a letter at a time
@@ -1073,11 +1084,11 @@ def tile(key, col, row, accent):
 
 
 def projects_mark(col, row, size=16):
-    """The projects heading's icon, a size below the app icons: four app cards (Cadran, Retrotape, Lift, LED Board)
+    """The projects heading's icon, a size below the app icons: four app cards (Cadran, Retrotape, Lift, Glowback)
     stacked down to the right on a dark tile, each lit along its top edge and cut from the one behind."""
     tile_ = '#1C120A'
     cells = {(col + c, row + r): tile_ for r in range(size) for c in range(size) if rounded((c + .5) / size, (r + .5) / size, .22)}
-    for i, color in enumerate((CADRAN, RETROTAPE, LIFT, BOARD)):
+    for i, color in enumerate((CADRAN, RETROTAPE, LIFT, GLOWBACK)):
         x0, y0 = col + 2 + 2 * i, row + 2 + 2 * i
         if i:  # a one-LED gap from the card behind
             cells |= {(x0 + c, y0 + r): tile_ for r in range(-1, 7) for c in range(-1, 7) if (x0 + c, y0 + r) in cells}
@@ -1118,7 +1129,7 @@ def badges(pn):
 
 
 def projects_card(downloads=None, now=None, only=None):
-    """The projects as one card: the heading, then Cadran with its badges under it, Retrotape, Lift and LED Board. Each band
+    """The projects as one card: the heading, then Cadran with its badges under it, Retrotape, Lift and Glowback. Each band
     is an image of its own (or a line of them) so README.md can link it; api/cadran.py and api/lift.py serve theirs
     live (the download count, the clocks), the build writes the rest. The live bands come as (copy, live part),
     the badges as (Product Hunt, awesome-mac, the rest), see columns. `only` draws just that band, numbered as
@@ -1129,7 +1140,7 @@ def projects_card(downloads=None, now=None, only=None):
     bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
         (lambda b: ('My projects: four apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
         (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 211, 287, DEVICE_LIVE),
-        (lambda b: board(b), 287, None, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
+        (lambda b: glowback(b), 287, None, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
     out = []
     for i, (make, top, bottom, cuts) in enumerate(bands):
         if only is None or i == only:
@@ -1378,33 +1389,41 @@ def retrotape(pn):
                    'KOTLIN, COMPOSE MULTIPLATFORM, METAL', 'ON THE APP STORE ↗', RETROTAPE, art('retrotape', 6, 6, .22), demo)
 
 
-def board(pn):
-    """Crypto LED Board on a desktop monitor: the ticker over a scrolling chart."""
-    period, base = 84, 37  # the chart fills the screen down to its last row
+def glowback(pn):
+    """Glowback on a desktop monitor: the LEDs behind it light the wall with the colours of the picture's edges,
+    fading between two pictures. Each LED of the glow takes the colour of the nearest point of the screen."""
+    sx, sy, sw, sh = 225, 5, 54, 33  # the screen, inside a 58x37 bezel at (223, 3), as on `monitor`
+    pictures = [[(40, 96, 255), (150, 72, 255), (255, 138, 48)], [(24, 196, 200), (236, 72, 156), (255, 204, 70)]]
+
+    def scene(k, x, y):
+        a, b_, c = pictures[k]
+        u, v = (x - sx) / (sw - 1), (y - sy) / (sh - 1)
+        col = mix(a, b_, u * 2) if u < .5 else mix(b_, c, u * 2 - 1)
+        return mix(col, (10, 8, 22), .45 * v * v)  # darker towards the bottom, like a scene
+
+    def layer(k):
+        screen = {(x, y): hexc(scene(k, x, y)) for y in range(sy, sy + sh) for x in range(sx, sx + sw)}
+        glow = {}
+        for r in range(3 - 7, 3 + 37 + 7):
+            for c in range(223 - 7, min(284, 223 + 58 + 7)):
+                d = tile_dist(c - 223, r - 3, 58, 37, 2)
+                if 1 < d <= 7:
+                    near = scene(k, min(max(c, sx), sx + sw - 1), min(max(r, sy), sy + sh - 1))
+                    glow[(c, r)] = hexc(mix(rgb(BG), near, .62 * (1 - (math.ceil(d) - 2) / 6)))
+        return glow | screen
 
     def demo(pn):
-        items = []
-        for sym, up in [('BTC', 1), ('ETH', 0), ('SOL', 1), ('BNB', 1), ('XRP', 0), ('ADA', 1), ('DOGE', 0)]:
-            items += [(sym, BOARD), ('▲' if up else '▼', GREEN if up else RED)]  # symbols only: a picture, not a feed
-        tick, n = ticker(items, 0, gap=5)
-        tick = {(c + 225, r + 7): v for (c, r), v in tick.items()}
-        chart = {}
-        for i in range(period):  # periodic, so the scroll loops without a seam
-            t = 2 * math.pi * i / period
-            h = max(1, round(9 + 5 * math.sin(2 * t) + 3 * math.sin(5 * t + 1) + 1.5 * math.sin(11 * t + 2)))
-            for r in range(base - h + 1, base + 1):
-                chart[(225 + i, r)] = chart[(225 + i + period, r)] = BOARD if r == base - h + 1 else '#5A2600'
-        screen = {(225 + c, 5 + r): hexc(mix(rgb(BG), rgb(BOARD), .04)) for r in range(33) for c in range(54)}
-        return (pn.draw(monitor(BOARD) | screen)
-                + f'<clipPath id="win"><rect {pn.box(225, 5, 54, 33)}/></clipPath><g clip-path="url(#win)">'
-                f'<g class="tick">{pn.draw(tick)}</g>{pn.draw(hline(225, 278, 16, RULE))}<g class="chart">{pn.draw(chart)}</g></g>',
-                scroll('tick', n, 10, pn) + scroll('chart', period, 4, pn))
-    return project(pn, 'Crypto LED Board, for the web: live Binance prices, charts and order book on a pixel LED matrix with '
-                   'CRT glow. This profile borrows its fonts and colors. Made with React, WebSockets, Canvas and WebGL.',
-                   'LED BOARD', 'WEB',
-                   ['LIVE BINANCE PRICES, CHARTS AND ORDER BOOK', 'ON A PIXEL LED MATRIX WITH CRT GLOW.',
-                    'THIS PROFILE BORROWS ITS FONTS AND COLORS.'],
-                   'REACT, WEBSOCKETS, CANVAS, WEBGL', 'OPEN THE LIVE BOARD ↗', BOARD, board_icon(6, 6), demo)
+        tint, dark = rgb(GLOWBACK), rgb(BG)
+        body = (slab(240, 47, 24, 2, 0, (70, 66, 72), (40, 38, 44)) | slab(248, 40, 8, 7, 0, (60, 56, 62), (36, 34, 40))
+                | slab(223, 3, 58, 37, 2, mix((84, 80, 88), tint, .25), mix((34, 32, 38), dark, .3)))
+        css = '.gb{animation:gb 8s ease-in-out infinite alternate}@keyframes gb{0%,20%{opacity:1}80%,100%{opacity:0}}'
+        return pn.draw(body | layer(1)) + f'<g class="gb">{pn.draw(layer(0))}</g>', css
+    return project(pn, 'Glowback, for Windows: ambient light for the RGB LEDs on the back of your monitor. Every LED follows the '
+                   'picture in front of it, live. Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
+                   'GLOWBACK', 'WINDOWS',
+                   ['AMBIENT LIGHT FOR THE RGB LEDS ON THE', 'BACK OF YOUR MONITOR: EVERY LED FOLLOWS',
+                    'THE PICTURE IN FRONT OF IT, LIVE.'],
+                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, glowback_icon(6, 6), demo)
 
 
 GH = '#39D353'  # GitHub's contribution green
@@ -2186,12 +2205,12 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_text, _, lift_copy, _, led_board, retrotape_band, *badge_strip = projects_card(now=STILL)
+    heading, cadran_text, _, lift_copy, _, glowback_band, retrotape_band, *badge_strip = projects_card(now=STILL)
     write('projects-2-badge', badge_strip)
     (IMG / 'projects-1.svg').write_text(heading)
     for name, svg in (('projects-2-copy', cadran_text), ('projects-3-copy', lift_copy)):
         (IMG / f'{name}.svg').write_text(svg)
-    (IMG / 'projects-4.svg').write_text(led_board)
+    (IMG / 'projects-4.svg').write_text(glowback_band)
     (IMG / 'projects-5.svg').write_text(retrotape_band)
     greeting, _, im, header = hero()
     for name, svg in (('hero-greeting', greeting), ('hero-im', im), ('hero-body', header)):
