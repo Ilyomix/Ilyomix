@@ -511,25 +511,25 @@ def bezel(col, row, w, h, color):
 
 
 def glowback_icon(col, row, size=24):
-    """Glowback's icon: a ring of light going from blue through violet to orange, on a dark tile."""
-    stops = [(0, (76, 125, 255)), (.35, (155, 123, 255)), (.68, (232, 95, 168)), (1, (255, 154, 61))]
+    """Glowback's app icon, LED for LED: the glowing ring of its Windows executable (the same formula as
+    glowback.icon_pixels: blue at the top, violet and pink down the sides, orange at the bottom, a faint glow
+    inside), over the panel instead of a transparent background. No tile: the app icon has none."""
+    stops = ((0.0, (64, 112, 255)), (0.35, (168, 76, 255)), (0.7, (255, 84, 128)), (1.0, (255, 170, 60)))
 
-    def hue(t):
+    def grad(t):
         for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
             if t <= t1:
                 return mix(c0, c1, (t - t0) / (t1 - t0))
         return stops[-1][1]
-    cells = {(col + c, row + r): '#120E1C' for r in range(size) for c in range(size)
-             if rounded((c + .5) / size, (r + .5) / size, .22)}
-    for r in range(size):
-        for c in range(size):
-            dx, dy = c + .5 - size / 2, r + .5 - size / 2
-            d = math.hypot(dx, dy)
-            t = 1 - abs((math.atan2(dx, -dy) / (2 * math.pi)) % 1 * 2 - 1)  # 0 at the top, 1 at the bottom
-            if 5.6 <= d <= 8.4:
-                cells[(col + c, row + r)] = hexc(hue(t))
-            elif 8.4 < d <= 9.6 or 4.4 <= d < 5.6:  # its glow, a step dimmer
-                cells[(col + c, row + r)] = hexc(mix((18, 14, 28), hue(t), .35))
+    cells, c = {}, size / 2
+    for y in range(size):
+        for x in range(size):
+            dx, dy = x + .5 - c, y + .5 - c
+            r = math.hypot(dx, dy) / c
+            alpha = min(1.0, max(0.0, 1.0 - abs(r - .66) / .2) ** .8 * 1.6 + max(0.0, 1.0 - r) * .35)
+            if alpha > .04:
+                t = (math.atan2(dx, -dy) / (2 * math.pi)) % 1.0
+                cells[(col + x, row + y)] = hexc(mix(rgb(BG), grad(1.0 - abs(2 * t - 1.0)), alpha))
     return cells
 
 
@@ -956,8 +956,8 @@ STACK_ICONS = {
         {'W': '#FFF1D6', 'R': '#FF3B2F'}),
     'lift': (['.X.....X.', 'XX.....XX', 'XX.....XX', 'XXXXXXXXX', 'XX.....XX', 'XX.....XX', '.X.....X.'],
         {'X': '#7FA6FF'}),
-    'glowback': (['..BBVVV..', '.B.....V.', 'B.......P', 'B.......P', 'C.......O', '.C.....O.', '..CCOOO..'],
-        {'B': '#4C7DFF', 'V': '#9B7BFF', 'P': '#E85FA8', 'O': '#FF9A3D', 'C': '#2EC8D8'}),
+    'glowback': (['..BBBBB..', '.V.....V.', 'V.......V', 'P.......P', 'P.......P', '.O.....O.', '..OOOOO..'],
+        {'B': '#4070FF', 'V': '#A84CFF', 'P': '#FF5480', 'O': '#FFAA3C'}),  # the app icon's ring: blue on top, orange below
 }
 
 # 24-LED tile for the GitHub card, like the app icons: (rows, palette).
@@ -1069,11 +1069,11 @@ def card_text(name, tag, sub, lines, foot, left, accent, copy=36):
     return cells | (text(foot, left, 61, accent, '3x5') if foot else {})
 
 
-def project(pn, alt, name, tag, lines, tech, cta, accent, icon, demo):
+def project(pn, alt, name, tag, lines, tech, cta, accent, icon, demo, framed=True):
     """One band of the projects card, 76 rows on `pn`: a 24-LED icon level with the title's top, then name,
     link, description and stack from column 40; on the right (columns 220-283) `demo` draws the app running
     on its device. Returns (alt, body, css)."""
-    cells = halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent) | card_text(name, tag, cta, lines, tech, 40, accent)
+    cells = ((halo(6, 6, 24, 24, accent) | icon | outline(6, 6, 24, accent)) if framed else icon) | card_text(name, tag, cta, lines, tech, 40, accent)
     body, css = demo(pn.at_row(3))  # the device 3 rows down, so its light stays clear of the rule above
     return alt, pn.draw(cells | {(c, 0): RULE for c in range(0, pn.cols, 2)}) + body, css  # a dotted rule over each project
 
@@ -1423,7 +1423,7 @@ def glowback(pn):
                    'GLOWBACK', 'WINDOWS',
                    ['AMBIENT LIGHT FOR THE RGB LEDS ON THE', 'BACK OF YOUR MONITOR: EVERY LED FOLLOWS',
                     'THE PICTURE IN FRONT OF IT, LIVE.'],
-                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, glowback_icon(6, 6), demo)
+                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, glowback_icon(6, 6), demo, framed=False)
 
 
 GH = '#39D353'  # GitHub's contribution green
