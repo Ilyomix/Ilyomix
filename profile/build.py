@@ -1427,8 +1427,8 @@ def glowback(pn):
                    'picture in front of it, live. Works with Home Assistant, and through it with Google Assistant, Alexa and Siri. '
                    'Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
                    'GLOWBACK', 'WINDOWS',
-                   ['AMBIENT LIGHT FOR THE RGB LEDS ON THE', 'BACK OF YOUR MONITOR: EVERY LED FOLLOWS',
-                    'THE PICTURE IN FRONT OF IT, LIVE.'],
+                   ['AMBIENT LIGHT: EACH LED ON THE BACK OF YOUR', 'MONITOR FOLLOWS THE PICTURE, LIVE. WORKS',
+                    'WITH HOME ASSISTANT, GOOGLE, ALEXA, SIRI.'],
                    'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
 
 
