@@ -1113,14 +1113,15 @@ def projects_card(downloads=None, now=None, only=None):
     is an image of its own (or a line of them) so README.md can link it; api/cadran.py and api/lift.py serve theirs
     live (the download count, the clocks), the build writes the rest. The live bands come as (copy, live part),
     the badges as (Product Hunt, awesome-mac, the rest), see columns. `only` draws just that band, numbered as
-    listed below: Retrotape and the badges come last so the live bands keep their numbers."""
+    listed below: Retrotape and the badges come last so the live bands keep their numbers. The card's bottom edge is a
+    strip of its own: Lift ends the card, and its live column, from whichever build Vercel runs, is 76 rows like the rest."""
     pn = Panel(284, 32 + 72 + 31 + 76 + 76 + 76)
     heading = (halo(6, 8, 16, 16, CREAM) | projects_mark(6, 8) | outline(6, 8, 16, CREAM)  # 16 LEDs, level with the title and its line
                | text('MY PROJECTS', 32, 8, CREAM) | text('FOUR APPS I DESIGNED AND BUILT ON MY OWN.', 32, 19, MUTED, '3x5'))  # the LED font, as on the pet card's buttons
     bands = [  # (make, top row, bottom row, cuts): Cadran ends under its download count, then its badges, ten rows above Lift
         (lambda b: ('My projects: four apps I designed and built on my own.', b.draw(heading), ''), 0, 32, None),
-        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 287, None, DEVICE_LIVE),
-        (glowback, 211, 287, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS)]
+        (lambda b: cadran(b, downloads, now), 32, 104, DEVICE_LIVE), (lambda b: lift(b, None, now), 287, 363, DEVICE_LIVE),
+        (glowback, 211, 287, None), (retrotape, 135, 211, None), (badges, 104, 135, BADGE_CUTS), (lambda b: ('', '', ''), 363, None, None)]
     out = []
     for i, (make, top, bottom, cuts) in enumerate(bands):
         if only is None or i == only:
@@ -2228,13 +2229,14 @@ def build_all():
     panels = {'github': github, 'links': links}  # hero, the Cadran and Lift bands, and pet are live, see api/
     for name, make in panels.items():
         write(name, make())
-    heading, cadran_text, _, lift_copy, _, glowback_band, retrotape_band, *badge_strip = projects_card(now=STILL)
+    heading, cadran_text, _, lift_copy, _, glowback_band, retrotape_band, *badge_strip, bottom = projects_card(now=STILL)
     write('projects-2-badge', badge_strip)
     (IMG / 'projects-1.svg').write_text(heading)
     for name, svg in (('projects-2-copy', cadran_text), ('projects-3-copy', lift_copy)):
         (IMG / f'{name}.svg').write_text(svg)
     (IMG / 'projects-4.svg').write_text(glowback_band)
     (IMG / 'projects-5.svg').write_text(retrotape_band)
+    (IMG / 'projects-6.svg').write_text(bottom)
     greeting, _, im, header = hero()
     for name, svg in (('hero-greeting', greeting), ('hero-im', im), ('hero-body', header)):
         (IMG / f'{name}.svg').write_text(svg)
