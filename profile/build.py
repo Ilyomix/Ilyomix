@@ -973,7 +973,7 @@ TILE_ICONS = {
 
 # Pixel emojis that sit on a line of text: (rows, palette).
 EMOJI = {
-    'fr': (['BBWWRR'] * 5, {'B': '#3D7BFF', 'W': CREAM, 'R': '#EF4135'}),  # 5 tall, on 3x5 text
+    'fr': (['BBBWWWRRR'] * 7, {'B': '#3D7BFF', 'W': CREAM, 'R': '#EF4135'}),  # 7 tall, on 5x7 text
 }
 
 
@@ -996,11 +996,11 @@ def hero(n=None):
     tick, length = ticker(stack, 89, gap=12)  # the icons part the words: no separators
     name = title('ILYES ABD-LILLAH', 68, 28, CREAM)
     typed = title_width('ILYES ABD-LILLAH')  # the width the typing uncovers, a letter at a time
-    lines = [('AT POSITIVE SOLUTIONS IN TOULOUSE, FRANCE', 'fr'), ('BUILDING INTERFACES AND DESIGN SYSTEMS SINCE 2017.', None),
-             ('ON THE SIDE, I MAKE APPS FOR THE MAC AND IPHONE.', None)]
-    intro = {}
-    for i, (ln, icon) in enumerate(lines):  # the flag ends the line that names the country
-        intro |= text(ln, 68, 60 + i * 7, MUTED, '3x5') | (emoji(icon, 68 + text_width(ln, '3x5') + 4, 60 + i * 7) if icon else {})
+    role = 'PRODUCT ENGINEER IN TOULOUSE'  # the flag ends the line that names the place; here it ends flush with the name
+    intro = text(role, 68, 47, CREAM) | emoji('fr', 68 + text_width(role) + 6, 47)
+    lines = ['I DESIGN, BUILD AND SHIP APPS FOR THE WEB,', 'THE MAC, THE IPHONE AND WINDOWS.', 'LEAD FRONTEND ENGINEER AT FOODPILOT.']
+    for i, ln in enumerate(lines):
+        intro |= text(ln, 68, 60 + i * 7, MUTED, '3x5')
     assert max(c for c, _ in {**name, **intro}) < pn.cols - 2
     chase = {(c, pn.rows - 1): RULE for c in range(-3, pn.cols + 3, 3)}  # marching along the bottom only: the top
     border = {(c, 0): RULE for c in range(0, pn.cols, 3)}  # crosses the counter's cut, and pieces can't march in step
@@ -1014,7 +1014,7 @@ def hero(n=None):
     body = (pn.draw(glow | art('avatar', 6, 28, .14))
             + f'<g clip-path="url(#typed)">{pn.draw(name)}<g clip-path="url(#band)">{pn.draw(title("ILYES ABD-LILLAH", 68, 28, "#FFFFFF", decor=True))}</g></g>'
             + f'<g class="type"><g class="caret">{pn.draw(hline(68 + typed + 2, 68 + typed + 11, 43, CREAM) | hline(68 + typed + 2, 68 + typed + 11, 44, CREAM))}</g></g>'
-            + pn.draw(text('SENIOR TECH LEAD & DESIGN ENGINEER', 68, 47, CREAM) | intro | hline(0, pn.cols - 1, 84, RULE) | border)
+            + pn.draw(intro | hline(0, pn.cols - 1, 84, RULE) | border)
             + f'<g class="chase">{pn.draw(chase)}</g><g class="tick">{pn.draw(tick)}</g>'
             + pn.draw(hello | text(lead, 11, 11, CREAM)) + reels + live)
     # The name types itself: a mask that uncovers it a letter at a time, an underscore cursor that follows
@@ -1029,8 +1029,8 @@ def hero(n=None):
              f'@keyframes sweep{{0%{{transform:none;animation-timing-function:steps(52)}}25%,100%{{transform:translateX({pn.px(208)}px)}}}}'
              f'.chase{{animation:chase .9s steps(3) infinite}}@keyframes chase{{to{{transform:translateX(-{pn.px(3)}px)}}}}'
              + scroll('tick', length, 14, pn) + count_css + '.live{animation:live 1.2s step-end infinite}@keyframes live{50%{opacity:0}}')
-    alt = ('Ilyes Abd-Lillah, Senior Tech Lead and Design Engineer at Positive Solutions in Toulouse, France. '
-           'Building interfaces and design systems since 2017. On the side, I make apps for the Mac and iPhone.'
+    alt = ('Ilyes Abd-Lillah, Product Engineer in Toulouse, France: I design, build and ship apps for the web, the Mac, '
+           'the iPhone and Windows. Lead Frontend Engineer at FoodPilot (Positive Solutions).'
            + ('' if n is None else f' You are visitor number {n}.'))
     still = alt.split(' You are visitor')[0]
     return (columns(pn, HERO_LIVE, ['', alt, ''], body, style, defs, bottom=HERO_BAND)
