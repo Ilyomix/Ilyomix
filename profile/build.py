@@ -1424,12 +1424,13 @@ def glowback(pn):
             css += f'.gb{i}{{opacity:0;animation:gb{i} {cycle}s ease-in-out infinite}}@keyframes gb{i}{{{keys}}}'
         return pn.draw(stand | body | first) + ''.join(f'<g class="gb{i}">{pn.draw(l_)}</g>' for i, l_ in enumerate(rest, 1)), css
     return project(pn, 'Glowback, for Windows: ambient light for the RGB LEDs on the back of your monitor. Every LED follows the '
-                   'picture in front of it, live. Works with Home Assistant, and through it with Google Assistant, Alexa and Siri. '
-                   'Made with Python, Win32, DXGI and HID LampArray. Free and open source on GitHub.',
+                   'picture in front of it, live, or the music the PC plays, with a look per app and a softer light at night. '
+                   'Works with Home Assistant, and through it with Google Assistant, Alexa and Siri. '
+                   'Made with Python, Win32, DXGI, WASAPI and HID LampArray. Free and open source on GitHub.',
                    'GLOWBACK', 'WINDOWS',
-                   ['AMBIENT LIGHT: EACH LED ON THE BACK OF YOUR', 'MONITOR FOLLOWS THE PICTURE, LIVE. WORKS',
-                    'WITH HOME ASSISTANT, GOOGLE, ALEXA, SIRI.'],
-                   'PYTHON, WIN32, DXGI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
+                   ['AMBIENT LIGHT: EACH LED ON THE BACK OF YOUR', 'MONITOR FOLLOWS THE PICTURE OR YOUR MUSIC.',
+                    'PLUS HOME ASSISTANT, GOOGLE, ALEXA, SIRI.'],
+                   'PYTHON, WIN32, DXGI, WASAPI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
 
 
 GH = '#39D353'  # GitHub's contribution green
