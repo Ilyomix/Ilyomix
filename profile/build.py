@@ -1426,11 +1426,11 @@ def glowback(pn):
     return project(pn, 'Glowback, for Windows: ambient light for the RGB LEDs on the back of your monitor. Every LED follows the '
                    'picture in front of it, live, or the music the PC plays, with a look per app and a softer light at night. '
                    'Works with Home Assistant, and through it with Google Assistant, Alexa and Siri. '
-                   'Made with Python, Win32, DXGI, WASAPI and HID LampArray. Free and open source on GitHub.',
+                   'Made with Python, Win32, DXGI, WASAPI and HID LampArray. Free on the Microsoft Store, and open source.',
                    'GLOWBACK', 'WINDOWS',
                    ['AMBIENT LIGHT: EACH LED ON THE BACK OF YOUR', 'MONITOR FOLLOWS THE PICTURE OR YOUR MUSIC.',
                     'PLUS HOME ASSISTANT, GOOGLE, ALEXA, SIRI.'],
-                   'PYTHON, WIN32, DXGI, WASAPI, HID LAMPARRAY', 'FREE AND OPEN SOURCE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
+                   'PYTHON, WIN32, DXGI, WASAPI, HID LAMPARRAY', 'FREE ON THE MICROSOFT STORE ↗', GLOWBACK, art('glowback', 6, 6, .22), demo)
 
 
 GH = '#39D353'  # GitHub's contribution green
